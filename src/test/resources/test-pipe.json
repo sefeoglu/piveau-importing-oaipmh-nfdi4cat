@@ -1,0 +1,29 @@
+{
+  "header": {
+    "id": "4ff7a0a7-2fc3-4e84-a6ef-a83ab55b698c",
+    "title": "Test Pipe",
+    "context": "JUnit5 Tests",
+    "transport": "payload",
+    "version": "1.0"
+  },
+  "body": {
+    "segments": [
+      {
+        "header": {
+          "name": "importing-oaipmh",
+          "segmentNumber": 1,
+          "title": "Importing OAI-PMH",
+          "processed": false
+        },
+        "body": {
+          "endpoint": {
+            "address": "http://localhost:8080/pipe"
+          },
+          "config": {
+            "address": "http://10.16.0.98:8080/oai-pmh-geo-harvest/harvesters/geoportal-lt"
+          }
+        }
+      }
+    ]
+  }
+}
