@@ -1,5 +1,5 @@
 # piveau importing oai-pmh
-Microservice for importing from source and feeding a piveau pipe.
+Importing records via the OAI-PMH protocol and feeding a pipe.
 
 ## Pipe config parameters
 
@@ -8,8 +8,6 @@ _mandatory_
 `address` Address of the source
 
 _optional_
-
-`pageSize` Default value is `100`
 
 `incremental` Requires 
 

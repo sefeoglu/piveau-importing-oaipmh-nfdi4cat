@@ -33,10 +33,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ImportingOaipmhVerticle extends AbstractVerticle {
 
     private static final Namespace oaiNamespace = Namespace.getNamespace("oai", "http://www.openarchives.org/OAI/2.0/");
-    private static final Namespace dcatNamespace = Namespace.getNamespace("dcat", "http://www.w3.org/ns/dcat#");
 
     private static final String XML_PATH_OAIPMH_RECORD_IDENTIFIER = "/oai:record/oai:header/oai:identifier/text()";
-    private static final String XML_PATH_OAIPMH_RECORD_METADATA = "/oai:record/oai:metadata/dcat:Dataset";
+    private static final String XML_PATH_OAIPMH_RECORD_METADATA = "/oai:record/oai:metadata/*[1]";
 
     public static final String ADDRESS = "io.piveau.pipe.importing.oaipmh.queue";
 
@@ -71,9 +70,6 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
         HttpRequest<Buffer> request = client.getAbs(address)
                 .addQueryParam("verb", "ListRecords")
                 .expect(ResponsePredicate.SC_SUCCESS);
-        if (!request.queryParams().contains("metadataPrefix")) {
-            request.addQueryParam("metadataPrefix", "dcat_ap");
-        }
 
         if (resumptionToken != null) {
             request.addQueryParam("resumptionToken", resumptionToken);
@@ -96,7 +92,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                                     XPathFactory xpFactory = XPathFactory.instance();
                                     XPathExpression<Text> identifierExpression = xpFactory.compile(XML_PATH_OAIPMH_RECORD_IDENTIFIER, Filters.text(), Collections.emptyMap(), oaiNamespace);
                                     Text identifier = identifierExpression.evaluateFirst(doc);
-                                    XPathExpression<Element> metadataExpression = xpFactory.compile(XML_PATH_OAIPMH_RECORD_METADATA, Filters.element(), Collections.emptyMap(), oaiNamespace, dcatNamespace);
+                                    XPathExpression<Element> metadataExpression = xpFactory.compile(XML_PATH_OAIPMH_RECORD_METADATA, Filters.element(), Collections.emptyMap(), oaiNamespace);
                                     Element dataset = metadataExpression.evaluateFirst(doc);
 
                                     ObjectNode dataInfo = new ObjectMapper().createObjectNode()
