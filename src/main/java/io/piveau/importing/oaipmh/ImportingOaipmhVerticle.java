@@ -16,6 +16,8 @@ import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.predicate.ResponsePredicate;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
 import org.jdom2.*;
 import org.jdom2.filter.Filters;
 import org.jdom2.input.SAXBuilder;
@@ -25,7 +27,9 @@ import org.jdom2.xpath.XPathExpression;
 import org.jdom2.xpath.XPathFactory;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -103,8 +107,24 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                                     String output = new XMLOutputter(Format.getPrettyFormat()).outputString(dataset);
                                     pipeContext.log().trace(output);
 
-                                    pipeContext.setResult(output, "application/rdf+xml", dataInfo).forward(vertx);
+                                    output = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
+                                            "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" >\n" +
+                                            output +
+                                            "\n</rdf:RDF>";
+
+                                    ByteArrayOutputStream out = new ByteArrayOutputStream();
+                                    try {
+                                        Model m = ModelFactory.createDefaultModel();
+                                        m.read(new StringReader(output), "RDF/XML");
+                                        String outputFormat = config.get("outputFormat").textValue();
+                                        m.write(out, outputFormat);
+                                    } catch (Exception e) {
+                                        pipeContext.log().error("normalize model", e);
+                                        return;
+                                    }
+                                    pipeContext.setResult(out.toString(), "application/rdf+xml", dataInfo).forward(vertx);
                                     pipeContext.log().info("Data imported: " + dataInfo.toString());
+
                                 });
                                 if (result.token() != null && !result.token().isEmpty()) {
                                     fetch(result.token(), pipeContext, counter);

@@ -20,7 +20,8 @@
             "address": "http://localhost:8080/pipe"
           },
           "config": {
-            "address": "http://10.16.0.98:8080/oai-pmh-geo-harvest/harvesters/geoportal-lt"
+            "address": "http://10.16.0.98:8080/oai-pmh-geo-harvest/harvesters/geoportal-lt?metadataPrefix=dcat_ap",
+            "outputFormat": "text/turtle"
           }
         }
       }

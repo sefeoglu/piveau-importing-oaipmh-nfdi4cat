@@ -1,6 +1,5 @@
 package io.piveau.importing;
 
-import io.piveau.importing.MainVerticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
