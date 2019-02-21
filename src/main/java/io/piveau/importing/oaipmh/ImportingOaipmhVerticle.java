@@ -112,17 +112,18 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                                             output +
                                             "\n</rdf:RDF>";
 
+                                    String outputFormat = config.get("outputFormat").textValue();
+
                                     ByteArrayOutputStream out = new ByteArrayOutputStream();
                                     try {
                                         Model m = ModelFactory.createDefaultModel();
                                         m.read(new StringReader(output), "RDF/XML");
-                                        String outputFormat = config.get("outputFormat").textValue();
                                         m.write(out, outputFormat);
                                     } catch (Exception e) {
                                         pipeContext.log().error("normalize model", e);
                                         return;
                                     }
-                                    pipeContext.setResult(out.toString(), "application/rdf+xml", dataInfo).forward(vertx);
+                                    pipeContext.setResult(out.toString(), outputFormat, dataInfo).forward(vertx);
                                     pipeContext.log().info("Data imported: " + dataInfo.toString());
 
                                 });
