@@ -74,15 +74,16 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
         String address = config.path("address").textValue();
 
         HttpRequest<Buffer> request = client.getAbs(address)
-                .addQueryParam("verb", "ListRecords")
-                .expect(ResponsePredicate.SC_SUCCESS);
+                .addQueryParam("verb", "ListRecords");
+//                .expect(ResponsePredicate.SC_SUCCESS);
 
         if (resumptionToken != null) {
             request.addQueryParam("resumptionToken", resumptionToken);
         }
 
-        breaker.<HttpResponse<Buffer>>execute(fut -> request.send(fut.completer()))
-                .setHandler(ar -> {
+//        breaker.<HttpResponse<Buffer>>execute(fut -> request.send(fut.completer()))
+//                .setHandler(ar -> {
+        request.send(ar -> {
                     if (ar.succeeded()) {
                         HttpResponse<Buffer> response = ar.result();
                         ByteArrayInputStream stream = new ByteArrayInputStream(response.bodyAsString().getBytes());
