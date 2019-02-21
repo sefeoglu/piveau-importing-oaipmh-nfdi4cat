@@ -26,10 +26,12 @@ import org.jdom2.output.XMLOutputter;
 import org.jdom2.xpath.XPathExpression;
 import org.jdom2.xpath.XPathFactory;
 
+import javax.xml.bind.DatatypeConverter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.security.MessageDigest;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -99,13 +101,14 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                                     XPathExpression<Element> metadataExpression = xpFactory.compile(XML_PATH_OAIPMH_RECORD_METADATA, Filters.element(), Collections.emptyMap(), oaiNamespace);
                                     Element dataset = metadataExpression.evaluateFirst(doc);
 
+                                    String output = new XMLOutputter(Format.getPrettyFormat()).outputString(dataset);
+                                    pipeContext.log().trace(output);
+
                                     ObjectNode dataInfo = new ObjectMapper().createObjectNode()
                                             .put("total", result.completeSize())
                                             .put("counter", counter.incrementAndGet())
-                                            .put("identifier", identifier.getTextTrim());
-
-                                    String output = new XMLOutputter(Format.getPrettyFormat()).outputString(dataset);
-                                    pipeContext.log().trace(output);
+                                            .put("identifier", identifier.getTextTrim())
+                                            .put("hash", hash(output));
 
                                     output = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
                                             "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" >\n" +
@@ -142,6 +145,16 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                         pipeContext.setFailure(ar.cause().getMessage());
                     }
                 });
+    }
+
+    private String hash(String data) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("MD5");
+            byte[] hash = digest.digest(data.getBytes("UTF-8"));
+            return hash != null ? DatatypeConverter.printHexBinary(hash) : "";
+        } catch (Exception e) {
+            return null;
+        }
     }
 
 }
