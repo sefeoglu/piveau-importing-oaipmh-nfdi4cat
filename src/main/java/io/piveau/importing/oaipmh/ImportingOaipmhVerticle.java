@@ -81,71 +81,83 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
             request.addQueryParam("resumptionToken", resumptionToken);
         }
 
-//        breaker.<HttpResponse<Buffer>>execute(fut -> request.send(fut.completer()))
-//                .setHandler(ar -> {
-        request.send(ar -> {
-                    if (ar.succeeded()) {
-                        HttpResponse<Buffer> response = ar.result();
-                        ByteArrayInputStream stream = new ByteArrayInputStream(response.bodyAsString().getBytes());
-                        try {
-                            Document document = new SAXBuilder().build(stream);
+        breaker.<HttpResponse<Buffer>>execute(fut -> request.send(ar -> {
+            if (ar.succeeded()) {
+                HttpResponse<Buffer> response = ar.result();
+                if (response.statusCode() == 200) {
+                    fut.complete(ar.result());
+                } else {
+                    pipeContext.log().error(response.statusMessage());
+                    fut.fail(response.statusMessage());
+                }
+            } else {
+                pipeContext.log().error(ar.cause().getMessage());
+                fut.fail(ar.cause());
+            }
+        })).setHandler(ar -> {
+            if (ar.succeeded()) {
+                HttpResponse<Buffer> response = ar.result();
+                ByteArrayInputStream stream = new ByteArrayInputStream(response.bodyAsString().getBytes());
+                try {
+                    Document document = new SAXBuilder().build(stream);
 
-                            OAIPMHResponse oaipmhResponse = new OAIPMHResponse(document);
-                            if (oaipmhResponse.isSuccess()) {
-                                OAIPMHResult result = oaipmhResponse.getResult();
-                                List<Document> records = result.getRecords();
-                                records.forEach(doc -> {
+                    OAIPMHResponse oaipmhResponse = new OAIPMHResponse(document);
+                    if (oaipmhResponse.isSuccess()) {
+                        OAIPMHResult result = oaipmhResponse.getResult();
+                        List<Document> records = result.getRecords();
+                        records.forEach(doc -> {
 
-                                    XPathFactory xpFactory = XPathFactory.instance();
-                                    XPathExpression<Text> identifierExpression = xpFactory.compile(XML_PATH_OAIPMH_RECORD_IDENTIFIER, Filters.text(), Collections.emptyMap(), oaiNamespace);
-                                    Text identifier = identifierExpression.evaluateFirst(doc);
-                                    XPathExpression<Element> metadataExpression = xpFactory.compile(XML_PATH_OAIPMH_RECORD_METADATA, Filters.element(), Collections.emptyMap(), oaiNamespace);
-                                    Element dataset = metadataExpression.evaluateFirst(doc);
+                            XPathFactory xpFactory = XPathFactory.instance();
+                            XPathExpression<Text> identifierExpression = xpFactory.compile(XML_PATH_OAIPMH_RECORD_IDENTIFIER, Filters.text(), Collections.emptyMap(), oaiNamespace);
+                            Text identifier = identifierExpression.evaluateFirst(doc);
+                            XPathExpression<Element> metadataExpression = xpFactory.compile(XML_PATH_OAIPMH_RECORD_METADATA, Filters.element(), Collections.emptyMap(), oaiNamespace);
+                            Element dataset = metadataExpression.evaluateFirst(doc);
 
-                                    String output = new XMLOutputter(Format.getPrettyFormat()).outputString(dataset);
-                                    pipeContext.log().trace(output);
+                            String output = new XMLOutputter(Format.getPrettyFormat()).outputString(dataset);
+                            pipeContext.log().trace(output);
 
-                                    ObjectNode dataInfo = new ObjectMapper().createObjectNode()
-                                            .put("total", result.completeSize())
-                                            .put("counter", counter.incrementAndGet())
-                                            .put("identifier", identifier.getTextTrim())
-                                            .put("hash", hash(output));
+                            ObjectNode dataInfo = new ObjectMapper().createObjectNode()
+                                    .put("total", result.completeSize())
+                                    .put("counter", counter.incrementAndGet())
+                                    .put("identifier", identifier.getTextTrim())
+                                    .put("hash", hash(output));
 
-                                    output = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                                            "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" >\n" +
-                                            output +
-                                            "\n</rdf:RDF>";
+                            output = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
+                                    "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" >\n" +
+                                    output +
+                                    "\n</rdf:RDF>";
 
-                                    String outputFormat = config.get("outputFormat").textValue();
+                            String outputFormat = config.get("outputFormat").textValue();
 
-                                    ByteArrayOutputStream out = new ByteArrayOutputStream();
-                                    try {
-                                        Model m = ModelFactory.createDefaultModel();
-                                        m.read(new StringReader(output), "RDF/XML");
-                                        m.write(out, outputFormat);
-                                    } catch (Exception e) {
-                                        pipeContext.log().error("normalize model", e);
-                                        return;
-                                    }
-                                    pipeContext.setResult(out.toString(), outputFormat, dataInfo).forward(vertx);
-                                    pipeContext.log().info("Data imported: " + dataInfo.toString());
-
-                                });
-                                if (result.token() != null && !result.token().isEmpty()) {
-                                    fetch(result.token(), pipeContext, counter);
-                                } else {
-                                    pipeContext.log().info("Import finished");
-                                }
-                            } else {
-                                pipeContext.setFailure(oaipmhResponse.getError().getMessage());
+                            ByteArrayOutputStream out = new ByteArrayOutputStream();
+                            try {
+                                Model m = ModelFactory.createDefaultModel();
+                                m.read(new StringReader(output), "RDF/XML");
+                                m.write(out, outputFormat);
+                            } catch (Exception e) {
+                                pipeContext.log().error("normalize model", e);
+                                return;
                             }
-                        } catch (JDOMException | IOException e) {
-                            pipeContext.setFailure(e.getMessage());
+                            pipeContext.setResult(out.toString(), outputFormat, dataInfo).forward(vertx);
+                            pipeContext.log().info("Data imported: " + dataInfo.toString());
+
+                        });
+                        if (result.token() != null && !result.token().isEmpty()) {
+                            fetch(result.token(), pipeContext, counter);
+                        } else {
+                            pipeContext.log().info("Import finished");
                         }
                     } else {
-                        pipeContext.setFailure(ar.cause().getMessage());
+                        pipeContext.setFailure(oaipmhResponse.getError().getMessage());
                     }
-                });
+                } catch (Exception e) {
+                    pipeContext.setFailure(e.getMessage());
+                }
+            } else {
+                pipeContext.setFailure(ar.cause().getMessage());
+            }
+        });
+
     }
 
     private String hash(String data) {
