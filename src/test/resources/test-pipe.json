@@ -20,7 +20,7 @@
             "address": "http://localhost:8080/pipe"
           },
           "config": {
-            "address": "http://10.16.0.98:8080/oai-pmh-geo-harvest/harvesters/cuzk?metadataPrefix=dcat_ap",
+            "address": "http://10.16.0.98:8080/oai-pmh-geo-harvest/harvesters/gdi-de?metadataPrefix=geodcat_ap_extended",
             "outputFormat": "text/turtle"
           }
         }
