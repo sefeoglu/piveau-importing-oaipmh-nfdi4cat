@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.piveau.importing.oaipmh.responses.OAIPMHResponse;
 import io.piveau.importing.oaipmh.responses.OAIPMHResult;
 import io.piveau.pipe.connector.PipeContext;
+import io.piveau.utils.Hash;
+import io.piveau.utils.JenaUtils;
 import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
 import io.vertx.core.AbstractVerticle;
@@ -114,13 +116,12 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                             Element dataset = metadataExpression.evaluateFirst(doc);
 
                             String output = new XMLOutputter(Format.getPrettyFormat()).outputString(dataset);
-                            pipeContext.log().trace(output);
 
                             ObjectNode dataInfo = new ObjectMapper().createObjectNode()
                                     .put("total", result.completeSize())
                                     .put("counter", counter.incrementAndGet())
                                     .put("identifier", identifier.getTextTrim())
-                                    .put("hash", hash(output));
+                                    .put("hash", Hash.asHexString(output));
 
                             output = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
                                     "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" >\n" +
@@ -132,7 +133,8 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                             ByteArrayOutputStream out = new ByteArrayOutputStream();
                             try {
                                 Model m = ModelFactory.createDefaultModel();
-                                m.read(new StringReader(output), "RDF/XML");
+                                m.setNsPrefixes(JenaUtils.DCATAP_PREFIXES);
+                                m.read(new StringReader(output), null, "RDF/XML");
                                 m.write(out, outputFormat);
                             } catch (Exception e) {
                                 pipeContext.log().error("normalize model", e);
@@ -158,16 +160,6 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
             }
         });
 
-    }
-
-    private String hash(String data) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("MD5");
-            byte[] hash = digest.digest(data.getBytes("UTF-8"));
-            return hash != null ? DatatypeConverter.printHexBinary(hash) : "";
-        } catch (Exception e) {
-            return null;
-        }
     }
 
 }
