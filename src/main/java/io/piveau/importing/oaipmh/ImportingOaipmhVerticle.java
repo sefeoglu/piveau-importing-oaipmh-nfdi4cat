@@ -140,7 +140,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                                 pipeContext.log().error("normalize model", e);
                                 return;
                             }
-                            pipeContext.setResult(out.toString(), outputFormat, dataInfo).forward(vertx);
+                            pipeContext.setResult(out.toString(), outputFormat, dataInfo).forward(client);
                             pipeContext.log().info("Data imported: " + dataInfo.toString());
 
                         });
