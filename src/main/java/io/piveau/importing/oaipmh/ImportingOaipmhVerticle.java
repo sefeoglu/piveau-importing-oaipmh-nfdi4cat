@@ -3,7 +3,6 @@ package io.piveau.importing.oaipmh;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.piveau.importing.oaipmh.responses.OAIPMHError;
 import io.piveau.importing.oaipmh.responses.OAIPMHResponse;
 import io.piveau.importing.oaipmh.responses.OAIPMHResult;
 import io.piveau.pipe.connector.PipeContext;
@@ -32,9 +31,7 @@ import org.jdom2.xpath.XPathFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ImportingOaipmhVerticle extends AbstractVerticle {
@@ -67,7 +64,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
         JsonNode config = pipeContext.getConfig();
         if ("identifiers".equals(config.path("mode").asText("metadata"))) {
             pipeContext.log().info("Fetch identifiers started");
-            fetchIdentifiers(null, pipeContext);
+            fetchIdentifiers(null, pipeContext, new HashSet<>());
         } else {
             pipeContext.log().info("Import metadata started");
             fetch(null, pipeContext, new AtomicInteger());
@@ -166,7 +163,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
 
     }
 
-    private void fetchIdentifiers(String token, PipeContext pipeContext) {
+    private void fetchIdentifiers(String token, PipeContext pipeContext, Set<String> identifiers) {
         JsonNode config = pipeContext.getConfig();
         String address = config.path("address").textValue();
 
@@ -175,8 +172,6 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
         if (token != null) {
             request.addQueryParam("resumptionToken", token);
         }
-
-        final List<String> identifiers = new ArrayList<>();
 
         breaker.<HttpResponse<Buffer>>execute(fut -> request.send(ar -> {
             if (ar.succeeded()) {
@@ -206,10 +201,10 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                         pipeContext.log().debug("Fetched " + identifiers.size() + " identifiers so far");
                         String nextToken = result.token();
                         if (nextToken != null && !nextToken.isEmpty()) {
-                            fetchIdentifiers(nextToken, pipeContext);
+                            fetchIdentifiers(nextToken, pipeContext, identifiers);
                         } else {
                             pipeContext.log().info("Fetching identifiers finished: " + identifiers.size() + " identifiers");
-                            pipeContext.setResult(new JsonArray(identifiers).encodePrettily(), "application/json").forward(client);
+                            pipeContext.setResult(new JsonArray(new ArrayList<>(identifiers)).encodePrettily(), "application/json").forward(client);
                         }
                     }
                 } catch (Exception e) {
