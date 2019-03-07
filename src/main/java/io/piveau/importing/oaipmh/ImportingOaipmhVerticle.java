@@ -3,6 +3,7 @@ package io.piveau.importing.oaipmh;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.piveau.importing.oaipmh.responses.OAIPMHError;
 import io.piveau.importing.oaipmh.responses.OAIPMHResponse;
 import io.piveau.importing.oaipmh.responses.OAIPMHResult;
 import io.piveau.pipe.connector.PipeContext;
@@ -14,10 +15,10 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.json.JsonArray;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.client.predicate.ResponsePredicate;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.jdom2.*;
@@ -28,12 +29,10 @@ import org.jdom2.output.XMLOutputter;
 import org.jdom2.xpath.XPathExpression;
 import org.jdom2.xpath.XPathFactory;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.StringReader;
-import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -67,7 +66,12 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
 
         pipeContext.log().info("Import started");
 
-        fetch(null, pipeContext, new AtomicInteger());
+        JsonNode config = pipeContext.getConfig();
+        if ("identifier".equals(config.path("mode").asText("metadata"))) {
+            fetchIdentifiers(null, pipeContext);
+        } else {
+            fetch(null, pipeContext, new AtomicInteger());
+        }
     }
 
     private void fetch(String resumptionToken, PipeContext pipeContext, AtomicInteger counter) {
@@ -160,6 +164,60 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
             }
         });
 
+    }
+
+    private void fetchIdentifiers(String token, PipeContext pipeContext) {
+        JsonNode config = pipeContext.getConfig();
+        String address = config.path("address").textValue();
+
+        HttpRequest<Buffer> request = client.getAbs(address).addQueryParam("verb", "ListIdentifiers");
+
+        if (token != null) {
+            request.addQueryParam("resumptionToken", token);
+        }
+
+        final List<String> identifiers = new ArrayList<>();
+
+        breaker.<HttpResponse<Buffer>>execute(fut -> request.send(ar -> {
+            if (ar.succeeded()) {
+                HttpResponse<Buffer> response = ar.result();
+                if (response.statusCode() == 200) {
+                    fut.complete(ar.result());
+                } else {
+                    pipeContext.log().error(response.statusMessage());
+                    fut.fail(response.statusMessage());
+                }
+            } else {
+                pipeContext.log().error(ar.cause().getMessage());
+                fut.fail(ar.cause());
+            }
+        })).setHandler(ar -> {
+            if (ar.succeeded()) {
+                HttpResponse<Buffer> response = ar.result();
+                ByteArrayInputStream stream = new ByteArrayInputStream(response.bodyAsString().getBytes());
+                try {
+                    Document document = new SAXBuilder().build(stream);
+                    OAIPMHResponse oaipmhResponse = new OAIPMHResponse(document);
+                    if (oaipmhResponse.isError()) {
+                        pipeContext.setFailure(oaipmhResponse.getError().getMessage());
+                    } else {
+                        OAIPMHResult result = oaipmhResponse.getResult();
+                        identifiers.addAll(result.getIdentifiers());
+                        String nextToken = result.token();
+                        if (nextToken != null && !nextToken.isEmpty()) {
+                            fetchIdentifiers(nextToken, pipeContext);
+                        } else {
+                            pipeContext.log().info("Import identifiers finished: " + identifiers.size() + " identifiers");
+                            pipeContext.setResult(new JsonArray(identifiers).encodePrettily(), "application/json").forward(client);
+                        }
+                    }
+                } catch (Exception e) {
+                    pipeContext.setFailure(e.getMessage());
+                }
+            } else {
+                pipeContext.setFailure(ar.cause().getMessage());
+            }
+        });
     }
 
 }
