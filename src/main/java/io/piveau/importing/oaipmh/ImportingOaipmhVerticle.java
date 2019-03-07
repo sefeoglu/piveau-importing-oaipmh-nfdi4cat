@@ -64,12 +64,12 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
     private void handlePipe(Message<PipeContext> message) {
         PipeContext pipeContext = message.body();
 
-        pipeContext.log().info("Import started");
-
         JsonNode config = pipeContext.getConfig();
-        if ("identifier".equals(config.path("mode").asText("metadata"))) {
+        if ("identifiers".equals(config.path("mode").asText("metadata"))) {
+            pipeContext.log().info("Fetch identifiers started");
             fetchIdentifiers(null, pipeContext);
         } else {
+            pipeContext.log().info("Import metadata started");
             fetch(null, pipeContext, new AtomicInteger());
         }
     }
@@ -184,7 +184,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                 if (response.statusCode() == 200) {
                     fut.complete(ar.result());
                 } else {
-                    pipeContext.log().error(response.statusMessage());
+                    pipeContext.log().error("Fetch identifiers: " + response.statusMessage() + " - " + response.bodyAsString());
                     fut.fail(response.statusMessage());
                 }
             } else {
@@ -203,11 +203,12 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                     } else {
                         OAIPMHResult result = oaipmhResponse.getResult();
                         identifiers.addAll(result.getIdentifiers());
+                        pipeContext.log().debug("Fetched " + identifiers.size() + " identifiers so far");
                         String nextToken = result.token();
                         if (nextToken != null && !nextToken.isEmpty()) {
                             fetchIdentifiers(nextToken, pipeContext);
                         } else {
-                            pipeContext.log().info("Import identifiers finished: " + identifiers.size() + " identifiers");
+                            pipeContext.log().info("Fetching identifiers finished: " + identifiers.size() + " identifiers");
                             pipeContext.setResult(new JsonArray(identifiers).encodePrettily(), "application/json").forward(client);
                         }
                     }
