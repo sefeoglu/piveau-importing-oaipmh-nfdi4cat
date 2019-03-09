@@ -106,14 +106,17 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
 
                     OAIPMHResponse oaipmhResponse = new OAIPMHResponse(document);
                     if (oaipmhResponse.isSuccess()) {
+                        String outputFormat = config.path("outputFormat").asText("application/n-triples");
+
+                        XPathFactory xpFactory = XPathFactory.instance();
+                        XPathExpression<Text> identifierExpression = xpFactory.compile(XML_PATH_OAIPMH_RECORD_IDENTIFIER, Filters.text(), Collections.emptyMap(), oaiNamespace);
+                        XPathExpression<Element> metadataExpression = xpFactory.compile(XML_PATH_OAIPMH_RECORD_METADATA, Filters.element(), Collections.emptyMap(), oaiNamespace);
+
                         OAIPMHResult result = oaipmhResponse.getResult();
                         List<Document> records = result.getRecords();
                         records.forEach(doc -> {
 
-                            XPathFactory xpFactory = XPathFactory.instance();
-                            XPathExpression<Text> identifierExpression = xpFactory.compile(XML_PATH_OAIPMH_RECORD_IDENTIFIER, Filters.text(), Collections.emptyMap(), oaiNamespace);
                             Text identifier = identifierExpression.evaluateFirst(doc);
-                            XPathExpression<Element> metadataExpression = xpFactory.compile(XML_PATH_OAIPMH_RECORD_METADATA, Filters.element(), Collections.emptyMap(), oaiNamespace);
                             Element dataset = metadataExpression.evaluateFirst(doc);
 
                             String output = new XMLOutputter(Format.getPrettyFormat()).outputString(dataset);
@@ -128,8 +131,6 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                                     "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" >\n" +
                                     output +
                                     "\n</rdf:RDF>";
-
-                            String outputFormat = config.get("outputFormat").textValue();
 
                             ByteArrayOutputStream out = new ByteArrayOutputStream();
                             try {
