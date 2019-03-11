@@ -60,13 +60,13 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
 
     private void handlePipe(Message<PipeContext> message) {
         PipeContext pipeContext = message.body();
-
         JsonNode config = pipeContext.getConfig();
-        if ("identifiers".equals(config.path("mode").asText("metadata"))) {
-            pipeContext.log().info("Fetch identifiers started");
+        String mode = config.path("mode").asText("metadata");
+        pipeContext.log().info("Import started. Mode '" + mode + "'");
+
+        if ("identifiers".equals(mode)) {
             fetchIdentifiers(null, pipeContext, new HashSet<>());
         } else {
-            pipeContext.log().info("Import metadata started");
             fetch(null, pipeContext, new AtomicInteger());
         }
     }
