@@ -62,7 +62,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
         PipeContext pipeContext = message.body();
         JsonNode config = pipeContext.getConfig();
         String mode = config.path("mode").asText("metadata");
-        pipeContext.log().info("Import started. Mode '" + mode + "'");
+        pipeContext.log().info("Import started. Mode '{}'", mode);
 
         if ("identifiers".equals(mode)) {
             fetchIdentifiers(null, pipeContext, new HashSet<>());
@@ -94,7 +94,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                     fut.fail(response.statusMessage());
                 }
             } else {
-                pipeContext.log().error(ar.cause().getMessage());
+                pipeContext.log().error("Sent metadata request", ar.cause());
                 fut.fail(ar.cause());
             }
         })).setHandler(ar -> {
@@ -139,26 +139,26 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                                 m.read(new StringReader(output), null, "RDF/XML");
                                 m.write(out, outputFormat);
                             } catch (Exception e) {
-                                pipeContext.log().error("normalize model", e);
+                                pipeContext.log().error("Normalize model", e);
                                 return;
                             }
                             pipeContext.setResult(out.toString(), outputFormat, dataInfo).forward(client);
-                            pipeContext.log().info("Data imported: " + dataInfo.toString());
+                            pipeContext.log().info("Data imported: {}", dataInfo.toString());
 
                         });
                         if (result.token() != null && !result.token().isEmpty()) {
                             fetch(result.token(), pipeContext, counter);
                         } else {
-                            pipeContext.log().info("Import finished");
+                            pipeContext.log().info("Import metadata finished");
                         }
                     } else {
                         pipeContext.setFailure(oaipmhResponse.getError().getMessage());
                     }
                 } catch (Exception e) {
-                    pipeContext.setFailure(e.getMessage());
+                    pipeContext.setFailure(e);
                 }
             } else {
-                pipeContext.setFailure(ar.cause().getMessage());
+                pipeContext.setFailure(ar.cause());
             }
         });
 
@@ -180,11 +180,11 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                 if (response.statusCode() == 200) {
                     fut.complete(ar.result());
                 } else {
-                    pipeContext.log().error("Fetch identifiers: " + response.statusMessage() + " - " + response.bodyAsString());
+                    pipeContext.log().error("Fetch identifiers: {} - {}", response.statusMessage(), response.bodyAsString());
                     fut.fail(response.statusMessage());
                 }
             } else {
-                pipeContext.log().error(ar.cause().getMessage());
+                pipeContext.log().error("Sent identifiers request", ar.cause());
                 fut.fail(ar.cause());
             }
         })).setHandler(ar -> {
@@ -199,20 +199,20 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                     } else {
                         OAIPMHResult result = oaipmhResponse.getResult();
                         identifiers.addAll(result.getIdentifiers());
-                        pipeContext.log().debug("Fetched " + identifiers.size() + " identifiers so far");
+                        pipeContext.log().debug("Fetched {} identifiers so far", identifiers.size());
                         String nextToken = result.token();
                         if (nextToken != null && !nextToken.isEmpty()) {
                             fetchIdentifiers(nextToken, pipeContext, identifiers);
                         } else {
-                            pipeContext.log().info("Fetching identifiers finished: " + identifiers.size() + " identifiers");
+                            pipeContext.log().info("Fetching identifiers finished: {} identifiers", identifiers.size());
                             pipeContext.setResult(new JsonArray(new ArrayList<>(identifiers)).encodePrettily(), "application/json").forward(client);
                         }
                     }
                 } catch (Exception e) {
-                    pipeContext.setFailure(e.getMessage());
+                    pipeContext.setFailure(e);
                 }
             } else {
-                pipeContext.setFailure(ar.cause().getMessage());
+                pipeContext.setFailure(ar.cause());
             }
         });
     }
