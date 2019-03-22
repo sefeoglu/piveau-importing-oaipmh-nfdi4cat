@@ -67,11 +67,11 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
         if ("identifiers".equals(mode)) {
             fetchIdentifiers(null, pipeContext, new HashSet<>());
         } else {
-            fetch(null, pipeContext, new AtomicInteger());
+            fetch(null, pipeContext, new ArrayList<>());
         }
     }
 
-    private void fetch(String resumptionToken, PipeContext pipeContext, AtomicInteger counter) {
+    private void fetch(String resumptionToken, PipeContext pipeContext, List<String> identifiers) {
 
         JsonNode config = pipeContext.getConfig();
         String address = config.path("address").textValue();
@@ -121,9 +121,10 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
 
                             String output = new XMLOutputter(Format.getPrettyFormat()).outputString(dataset);
 
+                            identifiers.add(identifier.getTextTrim());
                             ObjectNode dataInfo = new ObjectMapper().createObjectNode()
                                     .put("total", result.completeSize())
-                                    .put("counter", counter.incrementAndGet())
+                                    .put("counter", identifiers.size())
                                     .put("identifier", identifier.getTextTrim())
                                     .put("hash", Hash.asHexString(output));
 
@@ -142,11 +143,13 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                             }
                         });
                         if (result.token() != null && !result.token().isEmpty()) {
-                            fetch(result.token(), pipeContext, counter);
+                            fetch(result.token(), pipeContext, identifiers);
                         } else {
                             pipeContext.log().info("Import metadata finished");
+                            pipeContext.setResult(new JsonArray(identifiers).encodePrettily(), "application/json", new ObjectMapper().createObjectNode().put("content", "identifierList")).forward(client);
                         }
                     } else {
+
                         pipeContext.setFailure(oaipmhResponse.getError().getMessage());
                     }
                 } catch (Exception e) {
