@@ -90,8 +90,8 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                 if (response.statusCode() == 200) {
                     fut.complete(ar.result());
                 } else {
-                    pipeContext.log().error(response.statusMessage());
-                    fut.fail(response.statusMessage());
+                    pipeContext.log().warn("{} - retrying...", response.statusMessage());
+                    fut.fail(response.statusMessage() + " - " + response.bodyAsString());
                 }
             } else {
                 pipeContext.log().error("Sent metadata request", ar.cause());
@@ -132,19 +132,14 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                                     output +
                                     "\n</rdf:RDF>";
 
-                            ByteArrayOutputStream out = new ByteArrayOutputStream();
                             try {
-                                Model m = ModelFactory.createDefaultModel();
-                                m.setNsPrefixes(JenaUtils.DCATAP_PREFIXES);
-                                m.read(new StringReader(output), null, "RDF/XML");
-                                m.write(out, outputFormat);
+                                Model m = JenaUtils.read(output.getBytes(), "application/rdf+xml");
+                                String normalized = JenaUtils.write(m, outputFormat);
+                                pipeContext.setResult(normalized, outputFormat, dataInfo).forward(client);
+                                pipeContext.log().info("Data imported: {}", dataInfo.toString());
                             } catch (Exception e) {
                                 pipeContext.log().error("Normalize model", e);
-                                return;
                             }
-                            pipeContext.setResult(out.toString(), outputFormat, dataInfo).forward(client);
-                            pipeContext.log().info("Data imported: {}", dataInfo.toString());
-
                         });
                         if (result.token() != null && !result.token().isEmpty()) {
                             fetch(result.token(), pipeContext, counter);
