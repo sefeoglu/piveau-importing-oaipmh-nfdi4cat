@@ -121,25 +121,29 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
 
                             String output = new XMLOutputter(Format.getPrettyFormat()).outputString(dataset);
 
-                            identifiers.add(identifier.getTextTrim());
-                            ObjectNode dataInfo = new ObjectMapper().createObjectNode()
-                                    .put("total", result.completeSize())
-                                    .put("counter", identifiers.size())
-                                    .put("identifier", identifier.getTextTrim())
-                                    .put("hash", Hash.asHexString(output));
+                            if (identifier != null) {
+                                identifiers.add(identifier.getTextTrim());
+                                ObjectNode dataInfo = new ObjectMapper().createObjectNode()
+                                        .put("total", result.completeSize())
+                                        .put("counter", identifiers.size())
+                                        .put("identifier", identifier.getTextTrim())
+                                        .put("hash", Hash.asHexString(output));
 
-                            output = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                                    "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" >\n" +
-                                    output +
-                                    "\n</rdf:RDF>";
+                                output = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
+                                        "<ckan:RDF xmlns:ckan=\"http://www.w3.org/1999/02/22-ckan-syntax-ns#\" >\n" +
+                                        output +
+                                        "\n</ckan:RDF>";
 
-                            try {
-                                Model m = JenaUtils.read(output.getBytes(), "application/rdf+xml");
-                                String normalized = JenaUtils.write(m, outputFormat);
-                                pipeContext.setResult(normalized, outputFormat, dataInfo).forward(client);
-                                pipeContext.log().info("Data imported: {}", dataInfo.toString());
-                            } catch (Exception e) {
-                                pipeContext.log().error("Normalize model", e);
+                                try {
+                                    Model m = JenaUtils.read(output.getBytes(), "application/ckan+xml");
+                                    String normalized = JenaUtils.write(m, outputFormat);
+                                    pipeContext.setResult(normalized, outputFormat, dataInfo).forward(client);
+                                    pipeContext.log().info("Data imported: {}", dataInfo.toString());
+                                } catch (Exception e) {
+                                    pipeContext.log().error("Normalize model", e);
+                                }
+                            } else {
+                                pipeContext.log().error("No identifier: {}", output);
                             }
                         });
                         if (result.token() != null && !result.token().isEmpty()) {
@@ -151,7 +155,6 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                             });
                         }
                     } else {
-
                         pipeContext.setFailure(oaipmhResponse.getError().getMessage());
                     }
                 } catch (Exception e) {
