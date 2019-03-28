@@ -130,12 +130,12 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                                         .put("hash", Hash.asHexString(output));
 
                                 output = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                                        "<ckan:RDF xmlns:ckan=\"http://www.w3.org/1999/02/22-ckan-syntax-ns#\" >\n" +
+                                        "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" >\n" +
                                         output +
-                                        "\n</ckan:RDF>";
+                                        "\n</rdf:RDF>";
 
                                 try {
-                                    Model m = JenaUtils.read(output.getBytes(), "application/ckan+xml");
+                                    Model m = JenaUtils.read(output.getBytes(), "application/rdf+xml");
                                     String normalized = JenaUtils.write(m, outputFormat);
                                     pipeContext.setResult(normalized, outputFormat, dataInfo).forward(client);
                                     pipeContext.log().info("Data imported: {}", dataInfo.toString());
