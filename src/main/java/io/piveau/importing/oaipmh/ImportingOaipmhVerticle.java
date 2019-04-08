@@ -52,8 +52,8 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
         vertx.eventBus().consumer(ADDRESS, this::handlePipe);
         client = WebClient.create(vertx);
 
-        breaker = CircuitBreaker.create("oaipmh-breaker", vertx, new CircuitBreakerOptions().setMaxRetries(2).setTimeout(15000))
-                .retryPolicy(count -> count * 10000L);
+        breaker = CircuitBreaker.create("oaipmh-breaker", vertx, new CircuitBreakerOptions().setMaxRetries(2).setTimeout(60000))
+                .retryPolicy(count -> count * 2000L);
 
         startFuture.complete();
     }
