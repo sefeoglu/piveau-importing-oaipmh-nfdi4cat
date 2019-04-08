@@ -52,7 +52,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
         vertx.eventBus().consumer(ADDRESS, this::handlePipe);
         client = WebClient.create(vertx);
 
-        breaker = CircuitBreaker.create("oaipmh-breaker", vertx, new CircuitBreakerOptions().setMaxRetries(2))
+        breaker = CircuitBreaker.create("oaipmh-breaker", vertx, new CircuitBreakerOptions().setMaxRetries(2).setTimeout(30000))
                 .retryPolicy(count -> count * 2000L);
 
         startFuture.complete();
@@ -90,7 +90,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                 if (response.statusCode() == 200) {
                     fut.complete(ar.result());
                 } else {
-                    pipeContext.log().warn("{} - retrying...", response.statusMessage());
+                    pipeContext.log().warn("{} - {}", response.statusMessage(), response.bodyAsString());
                     fut.fail(response.statusMessage() + " - " + response.bodyAsString());
                 }
             } else {
