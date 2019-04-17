@@ -91,7 +91,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                     fut.complete(ar.result());
                 } else {
                     pipeContext.log().warn("{} - {}", response.statusMessage(), response.bodyAsString());
-                    fut.fail(response.statusMessage() + " - " + response.bodyAsString());
+                    fut.fail(response.statusMessage() + "\n" + response.bodyAsString());
                 }
             } else {
                 pipeContext.log().error("Sent metadata request", ar.cause());
