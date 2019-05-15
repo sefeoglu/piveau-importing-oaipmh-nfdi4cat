@@ -10,11 +10,15 @@ import io.piveau.utils.Hash;
 import io.piveau.utils.JenaUtils;
 import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
+import io.vertx.config.ConfigRetriever;
+import io.vertx.config.ConfigRetrieverOptions;
+import io.vertx.config.ConfigStoreOptions;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
@@ -47,6 +51,8 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
 
     private CircuitBreaker breaker;
 
+    private int defaultDelay;
+
     @Override
     public void start(Future<Void> startFuture) {
         vertx.eventBus().consumer(ADDRESS, this::handlePipe);
@@ -55,20 +61,25 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
         breaker = CircuitBreaker.create("oaipmh-breaker", vertx, new CircuitBreakerOptions().setMaxRetries(2).setTimeout(200000))
                 .retryPolicy(count -> count * 2000L);
 
-        startFuture.complete();
+        ConfigStoreOptions envStoreOptions = new ConfigStoreOptions()
+                .setType("env")
+                .setConfig(new JsonObject().put("keys", new JsonArray().add("PIVEAU_IMPORTING_SEND_LIST_DELAY")));
+        ConfigRetriever retriever = ConfigRetriever.create(vertx, new ConfigRetrieverOptions().addStore(envStoreOptions));
+        retriever.getConfig(ar -> {
+            if (ar.succeeded()) {
+                defaultDelay = ar.result().getInteger("PIVEAU_IMPORTING_SEND_LIST_DELAY", 8000);
+                startFuture.complete();
+            } else {
+                startFuture.fail(ar.cause());
+            }
+        });
     }
 
     private void handlePipe(Message<PipeContext> message) {
         PipeContext pipeContext = message.body();
-        JsonNode config = pipeContext.getConfig();
-        String mode = config.path("mode").asText("metadata");
-        pipeContext.log().info("Import started. Mode '{}'", mode);
+        pipeContext.log().info("Import started.");
 
-        if ("identifiers".equals(mode)) {
-            fetchIdentifiers(null, pipeContext, new HashSet<>());
-        } else {
-            fetch(null, pipeContext, new ArrayList<>());
-        }
+        fetch(null, pipeContext, new ArrayList<>());
     }
 
     private void fetch(String resumptionToken, PipeContext pipeContext, List<String> identifiers) {
@@ -127,6 +138,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                                         .put("total", result.completeSize())
                                         .put("counter", identifiers.size())
                                         .put("identifier", identifier.getTextTrim())
+                                        .put("catalogue", config.path("catalogue").asText())
                                         .put("hash", Hash.asHexString(output));
 
                                 output = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
@@ -150,8 +162,12 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                             fetch(result.token(), pipeContext, identifiers);
                         } else {
                             pipeContext.log().info("Import metadata finished");
-                            vertx.setTimer(5000, t -> {
-                                pipeContext.setResult(new JsonArray(identifiers).encodePrettily(), "application/json", new ObjectMapper().createObjectNode().put("content", "identifierList")).forward(client);
+                            int delay = pipeContext.getConfig().path("sendListDelay").asInt(defaultDelay);
+                            vertx.setTimer(delay, t -> {
+                                ObjectNode info = new ObjectMapper().createObjectNode()
+                                        .put("content", "identifierList")
+                                        .put("catalogue", config.path("catalogue").asText());
+                                pipeContext.setResult(new JsonArray(identifiers).encodePrettily(), "application/json", info).forward(client);
                             });
                         }
                     } else {
@@ -165,59 +181,6 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
             }
         });
 
-    }
-
-    private void fetchIdentifiers(String token, PipeContext pipeContext, Set<String> identifiers) {
-        JsonNode config = pipeContext.getConfig();
-        String address = config.path("address").textValue();
-
-        HttpRequest<Buffer> request = client.getAbs(address).addQueryParam("verb", "ListIdentifiers");
-
-        if (token != null) {
-            request.addQueryParam("resumptionToken", token);
-        }
-
-        breaker.<HttpResponse<Buffer>>execute(fut -> request.send(ar -> {
-            if (ar.succeeded()) {
-                HttpResponse<Buffer> response = ar.result();
-                if (response.statusCode() == 200) {
-                    fut.complete(ar.result());
-                } else {
-                    pipeContext.log().error("Fetch identifiers: {} - {}", response.statusMessage(), response.bodyAsString());
-                    fut.fail(response.statusMessage());
-                }
-            } else {
-                pipeContext.log().error("Sent identifiers request", ar.cause());
-                fut.fail(ar.cause());
-            }
-        })).setHandler(ar -> {
-            if (ar.succeeded()) {
-                HttpResponse<Buffer> response = ar.result();
-                ByteArrayInputStream stream = new ByteArrayInputStream(response.bodyAsString().getBytes());
-                try {
-                    Document document = new SAXBuilder().build(stream);
-                    OAIPMHResponse oaipmhResponse = new OAIPMHResponse(document);
-                    if (oaipmhResponse.isError()) {
-                        pipeContext.setFailure(oaipmhResponse.getError().getMessage());
-                    } else {
-                        OAIPMHResult result = oaipmhResponse.getResult();
-                        identifiers.addAll(result.getIdentifiers());
-                        pipeContext.log().debug("Fetched {} identifiers so far", identifiers.size());
-                        String nextToken = result.token();
-                        if (nextToken != null && !nextToken.isEmpty()) {
-                            fetchIdentifiers(nextToken, pipeContext, identifiers);
-                        } else {
-                            pipeContext.log().info("Fetching identifiers finished: {} identifiers", identifiers.size());
-                            pipeContext.setResult(new JsonArray(new ArrayList<>(identifiers)).encodePrettily(), "application/json").forward(client);
-                        }
-                    }
-                } catch (Exception e) {
-                    pipeContext.setFailure(e);
-                }
-            } else {
-                pipeContext.setFailure(ar.cause());
-            }
-        });
     }
 
 }
