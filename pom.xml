@@ -15,6 +15,14 @@
         <main.verticle>io.piveau.importing.MainVerticle</main.verticle>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>paca</id>
+            <name>paca</name>
+            <url>https://paca.okd.fokus.fraunhofer.de/repository/maven-public/</url>
+        </repository>
+    </repositories>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
