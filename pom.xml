@@ -65,7 +65,7 @@
         <dependency>
             <groupId>org.apache.jena</groupId>
             <artifactId>apache-jena-libs</artifactId>
-            <version>3.10.0</version>
+            <version>3.11.0</version>
             <type>pom</type>
         </dependency>
 
@@ -83,13 +83,13 @@
         <dependency>
             <groupId>io.piveau</groupId>
             <artifactId>piveau-utils</artifactId>
-            <version>0.0.1</version>
+            <version>0.0.3</version>
         </dependency>
 
         <dependency>
             <groupId>io.piveau</groupId>
             <artifactId>pipe-connector</artifactId>
-            <version>0.0.4-SNAPSHOT</version>
+            <version>0.0.3</version>
         </dependency>
 
         <dependency>
