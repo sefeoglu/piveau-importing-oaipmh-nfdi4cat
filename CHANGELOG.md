@@ -4,9 +4,12 @@
 
 **Added:**
 * buildInfo.json for build info via `/health` path
+* config.schema.json
 
 **Changed:**
 * Add `PIVEAU_` prefix to logstash configuration environment variables
+* Upgrade to Vert.x 3.8.0
+* Upgrade to pipe-connector 0.0.4
 
 **Removed:**
 
