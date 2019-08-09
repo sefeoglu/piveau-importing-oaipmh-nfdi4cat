@@ -8,12 +8,11 @@
 
 **Changed:**
 * Add `PIVEAU_` prefix to logstash configuration environment variables
-* Upgrade to Vert.x 3.8.0
-* Upgrade to pipe-connector 0.0.4
 
 **Removed:**
 
 **Fixed:**
+* Update all dependencies
 
 ## [0.1.0](https://gitlab.fokus.fraunhofer.de/viaduct/piveau-importing-oaipmh/tags/0.1.0) (2019-05-17)
 
