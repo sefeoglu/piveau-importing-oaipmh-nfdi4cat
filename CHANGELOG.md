@@ -1,5 +1,19 @@
 # ChangeLog
 
+## Unreleased
+
+**Added:**
+* buildInfo.json for build info via `/health` path
+* config.schema.json
+
+**Changed:**
+* Add `PIVEAU_` prefix to logstash configuration environment variables
+
+**Removed:**
+
+**Fixed:**
+* Update all dependencies
+
 ## [0.1.0](https://gitlab.fokus.fraunhofer.de/viaduct/piveau-importing-oaipmh/tags/0.1.0) (2019-05-17)
 
 **Added:**
