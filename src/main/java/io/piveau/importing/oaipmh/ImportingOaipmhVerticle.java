@@ -15,6 +15,7 @@ import io.vertx.config.ConfigRetrieverOptions;
 import io.vertx.config.ConfigStoreOptions;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
@@ -54,7 +55,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
     private int defaultDelay;
 
     @Override
-    public void start(Future<Void> startFuture) {
+    public void start(Promise<Void> startPromise) {
         vertx.eventBus().consumer(ADDRESS, this::handlePipe);
         client = WebClient.create(vertx);
 
@@ -68,10 +69,13 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
         retriever.getConfig(ar -> {
             if (ar.succeeded()) {
                 defaultDelay = ar.result().getInteger("PIVEAU_IMPORTING_SEND_LIST_DELAY", 8000);
-                startFuture.complete();
+                startPromise.complete();
             } else {
-                startFuture.fail(ar.cause());
+                startPromise.fail(ar.cause());
             }
+        });
+        retriever.listen(change -> {
+            defaultDelay = change.getNewConfiguration().getInteger("PIVEAU_IMPORTING_SEND_LIST_DELAY", 8000);
         });
     }
 
