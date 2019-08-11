@@ -7,9 +7,11 @@
 * config.schema.json
 * Configuration change listener
 * `PIVEAU_LOG_LEVEL` for general `io.piveau' package log level configuration
+* `sendHash` for configuring optional hash calculation in pipe
  
 **Changed:**
-* Add `PIVEAU_` prefix to logstash configuration environment variables
+* `PIVEAU_` prefix to logstash configuration environment variables
+* Hash is optional and calculation is based on canonical algorithm
 
 **Removed:**
 
