@@ -5,7 +5,9 @@
 **Added:**
 * buildInfo.json for build info via `/health` path
 * config.schema.json
-
+* Configuration change listener
+* `PIVEAU_LOG_LEVEL` for general `io.piveau' package log level configuration
+ 
 **Changed:**
 * Add `PIVEAU_` prefix to logstash configuration environment variables
 
