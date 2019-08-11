@@ -122,6 +122,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                     OAIPMHResponse oaipmhResponse = new OAIPMHResponse(document);
                     if (oaipmhResponse.isSuccess()) {
                         String outputFormat = config.path("outputFormat").asText("application/n-triples");
+                        boolean sendHash = config.path("sendHash").asBoolean(false);
 
                         XPathFactory xpFactory = XPathFactory.instance();
                         XPathExpression<Text> identifierExpression = xpFactory.compile(XML_PATH_OAIPMH_RECORD_IDENTIFIER, Filters.text(), Collections.emptyMap(), oaiNamespace);
@@ -142,8 +143,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                                         .put("total", result.completeSize())
                                         .put("counter", identifiers.size())
                                         .put("identifier", identifier.getTextTrim())
-                                        .put("catalogue", config.path("catalogue").asText())
-                                        .put("hash", Hash.asHexString(output));
+                                        .put("catalogue", config.path("catalogue").asText());
 
                                 output = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
                                         "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" >\n" +
@@ -152,6 +152,9 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
 
                                 try {
                                     Model m = JenaUtils.read(output.getBytes(), "application/rdf+xml");
+                                    if (sendHash) {
+                                        dataInfo.put("hash", JenaUtils.canonicalHash(m));
+                                    }
                                     String normalized = JenaUtils.write(m, outputFormat);
                                     pipeContext.setResult(normalized, outputFormat, dataInfo).forward(client);
                                     pipeContext.log().info("Data imported: {}", dataInfo.toString());
