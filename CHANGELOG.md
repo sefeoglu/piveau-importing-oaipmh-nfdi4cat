@@ -8,6 +8,7 @@
 * Configuration change listener
 * `PIVEAU_LOG_LEVEL` for general `io.piveau' package log level configuration
 * `sendHash` for configuring optional hash calculation in pipe
+* `sendHash` to config schema
  
 **Changed:**
 * `PIVEAU_` prefix to logstash configuration environment variables
