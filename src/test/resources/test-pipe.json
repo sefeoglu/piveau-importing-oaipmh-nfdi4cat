@@ -1,6 +1,7 @@
 {
   "header": {
     "id": "4ff7a0a7-2fc3-4e84-a6ef-a83ab55b698c",
+    "name": "test-pipe",
     "title": "Test Pipe",
     "context": "JUnit5 Tests",
     "transport": "payload",
@@ -20,8 +21,9 @@
             "address": "http://localhost:8080/pipe"
           },
           "config": {
-            "address": "http://10.16.0.98:8080/oai-pmh-geo-harvest/harvesters/gdi-de?metadataPrefix=geodcat_ap_extended",
-            "outputFormat": "text/turtle"
+            "address": "http://localhost:8098/import",
+            "outputFormat": "text/turtle",
+            "catalogue": "test-catalogue"
           }
         }
       }
