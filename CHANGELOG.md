@@ -14,6 +14,7 @@
 * `PIVEAU_` prefix to logstash configuration environment variables
 * Hash is optional and calculation is based on canonical algorithm
 * Requires now latest LTS Java 11
+* Docker base image to openjdk:11-jre
 
 **Removed:**
 
