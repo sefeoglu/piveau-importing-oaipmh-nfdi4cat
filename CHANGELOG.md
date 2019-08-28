@@ -13,6 +13,7 @@
 **Changed:**
 * `PIVEAU_` prefix to logstash configuration environment variables
 * Hash is optional and calculation is based on canonical algorithm
+* Requires now latest LTS Java 11
 
 **Removed:**
 
