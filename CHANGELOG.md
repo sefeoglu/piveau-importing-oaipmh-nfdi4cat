@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## [1.0.0](https://gitlab.fokus.fraunhofer.de/viaduct/piveau-importing-oaipmh/tags/1.0.0) (2019-11-08)
 
 **Added:**
 * buildInfo.json for build info via `/health` path
@@ -15,8 +15,6 @@
 * Hash is optional and calculation is based on canonical algorithm
 * Requires now latest LTS Java 11
 * Docker base image to openjdk:11-jre
-
-**Removed:**
 
 **Fixed:**
 * Update all dependencies
