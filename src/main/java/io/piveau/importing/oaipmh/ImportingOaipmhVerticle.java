@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.piveau.importing.oaipmh.responses.OAIPMHResponse;
 import io.piveau.importing.oaipmh.responses.OAIPMHResult;
 import io.piveau.pipe.connector.PipeContext;
+import io.piveau.rdf.PreProcessing;
 import io.piveau.utils.JenaUtils;
 import io.vertx.circuitbreaker.CircuitBreaker;
 import io.vertx.circuitbreaker.CircuitBreakerOptions;
@@ -21,7 +22,9 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
+import kotlin.Pair;
 import org.apache.jena.rdf.model.Model;
+import org.apache.jena.riot.Lang;
 import org.jdom2.*;
 import org.jdom2.filter.Filters;
 import org.jdom2.input.SAXBuilder;
@@ -144,8 +147,10 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                                         output +
                                         "\n</rdf:RDF>";
 
+                                Pair<byte[], String> parsed = PreProcessing.preProcess(output.getBytes(), "application/rdf+xml", address);
+
                                 try {
-                                    Model m = JenaUtils.read(output.getBytes(), "application/rdf+xml");
+                                    Model m = JenaUtils.read(parsed.getFirst(), parsed.getSecond(), address);
                                     if (sendHash) {
                                         dataInfo.put("hash", JenaUtils.canonicalHash(m));
                                     }
