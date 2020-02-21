@@ -1,5 +1,8 @@
 # ChangeLog
 
+**Changed:**
+* Connector lib update
+
 ## [1.0.1](https://gitlab.fokus.fraunhofer.de/viaduct/piveau-importing-oaipmh/tags/1.0.1) (2019-12-14)
 
 **Added:**

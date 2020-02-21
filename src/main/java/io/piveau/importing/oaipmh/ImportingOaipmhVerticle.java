@@ -1,6 +1,5 @@
 package io.piveau.importing.oaipmh;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.piveau.importing.oaipmh.responses.OAIPMHResponse;
@@ -24,7 +23,6 @@ import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import kotlin.Pair;
 import org.apache.jena.rdf.model.Model;
-import org.apache.jena.riot.Lang;
 import org.jdom2.*;
 import org.jdom2.filter.Filters;
 import org.jdom2.input.SAXBuilder;
@@ -85,8 +83,8 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
 
     private void fetch(String resumptionToken, PipeContext pipeContext, List<String> identifiers) {
 
-        JsonNode config = pipeContext.getConfig();
-        String address = config.path("address").textValue();
+        JsonObject config = pipeContext.getConfig();
+        String address = config.getString("address");
 
         HttpRequest<Buffer> request = client.getAbs(address)
                 .addQueryParam("verb", "ListRecords");
@@ -118,8 +116,8 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
 
                     OAIPMHResponse oaipmhResponse = new OAIPMHResponse(document);
                     if (oaipmhResponse.isSuccess()) {
-                        String outputFormat = config.path("outputFormat").asText("application/n-triples");
-                        boolean sendHash = config.path("sendHash").asBoolean(false);
+                        String outputFormat = config.getString("outputFormat", "application/n-triples");
+                        boolean sendHash = config.getBoolean("sendHash", false);
 
                         XPathFactory xpFactory = XPathFactory.instance();
                         XPathExpression<Text> identifierExpression = xpFactory.compile(XML_PATH_OAIPMH_RECORD_IDENTIFIER, Filters.text(), Collections.emptyMap(), oaiNamespace);
@@ -140,7 +138,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                                         .put("total", result.completeSize())
                                         .put("counter", identifiers.size())
                                         .put("identifier", identifier.getTextTrim())
-                                        .put("catalogue", config.path("catalogue").asText());
+                                        .put("catalogue", config.getString("catalogue"));
 
                                 output = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
                                         "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" >\n" +
@@ -155,7 +153,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                                         dataInfo.put("hash", JenaUtils.canonicalHash(m));
                                     }
                                     String normalized = JenaUtils.write(m, outputFormat);
-                                    pipeContext.setResult(normalized, outputFormat, dataInfo).forward(client);
+                                    pipeContext.setResult(normalized, outputFormat, dataInfo).forward();
                                     pipeContext.log().info("Data imported: {}", dataInfo.toString());
                                 } catch (Exception e) {
                                     pipeContext.log().error("Normalize model", e);
@@ -168,12 +166,12 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                             fetch(result.token(), pipeContext, identifiers);
                         } else {
                             pipeContext.log().info("Import metadata finished");
-                            int delay = pipeContext.getConfig().path("sendListDelay").asInt(defaultDelay);
+                            int delay = pipeContext.getConfig().getInteger("sendListDelay", defaultDelay);
                             vertx.setTimer(delay, t -> {
                                 ObjectNode info = new ObjectMapper().createObjectNode()
                                         .put("content", "identifierList")
-                                        .put("catalogue", config.path("catalogue").asText());
-                                pipeContext.setResult(new JsonArray(identifiers).encodePrettily(), "application/json", info).forward(client);
+                                        .put("catalogue", config.getString("catalogue"));
+                                pipeContext.setResult(new JsonArray(identifiers).encodePrettily(), "application/json", info).forward();
                             });
                         }
                     } else {
