@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.piveau.importing.oaipmh.responses.OAIPMHResponse;
 import io.piveau.importing.oaipmh.responses.OAIPMHResult;
-import io.piveau.pipe.connector.PipeContext;
+import io.piveau.pipe.PipeContext;
 import io.piveau.rdf.PreProcessing;
 import io.piveau.utils.JenaUtils;
 import io.vertx.circuitbreaker.CircuitBreaker;
@@ -32,6 +32,7 @@ import org.jdom2.xpath.XPathExpression;
 import org.jdom2.xpath.XPathFactory;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.*;
 
 public class ImportingOaipmhVerticle extends AbstractVerticle {
@@ -86,9 +87,16 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
         JsonObject config = pipeContext.getConfig();
         String address = config.getString("address");
 
-        HttpRequest<Buffer> request = client.getAbs(address)
-                .addQueryParam("verb", "ListRecords");
-//                .expect(ResponsePredicate.SC_SUCCESS);
+        HttpRequest<Buffer> request = client.getAbs(address);
+
+        if (config.containsKey("queries")) {
+            JsonObject queries = config.getJsonObject("queries");
+            queries.getMap().forEach((key, value) -> request.addQueryParam(key, value.toString()));
+        }
+
+        if (!request.queryParams().contains("verb")) {
+            request.addQueryParam("verb", "ListRecords");
+        }
 
         if (resumptionToken != null) {
             request.addQueryParam("resumptionToken", resumptionToken);
@@ -107,7 +115,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                 pipeContext.log().error("Sent metadata request", ar.cause());
                 fut.fail(ar.cause());
             }
-        })).setHandler(ar -> {
+        })).onComplete(ar -> {
             if (ar.succeeded()) {
                 HttpResponse<Buffer> response = ar.result();
                 ByteArrayInputStream stream = new ByteArrayInputStream(response.bodyAsString().getBytes());
@@ -117,7 +125,6 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                     OAIPMHResponse oaipmhResponse = new OAIPMHResponse(document);
                     if (oaipmhResponse.isSuccess()) {
                         String outputFormat = config.getString("outputFormat", "application/n-triples");
-                        boolean sendHash = config.getBoolean("sendHash", false);
 
                         XPathFactory xpFactory = XPathFactory.instance();
                         XPathExpression<Text> identifierExpression = xpFactory.compile(XML_PATH_OAIPMH_RECORD_IDENTIFIER, Filters.text(), Collections.emptyMap(), oaiNamespace);
@@ -145,11 +152,11 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                                         output +
                                         "\n</rdf:RDF>";
 
-                                Pair<byte[], String> parsed = PreProcessing.preProcess(output.getBytes(), "application/rdf+xml", address);
+                                Pair<ByteArrayOutputStream, String> parsed = PreProcessing.preProcess(output.getBytes(), "application/rdf+xml", address);
 
                                 try {
-                                    Model m = JenaUtils.read(parsed.getFirst(), parsed.getSecond(), address);
-                                    if (sendHash) {
+                                    Model m = JenaUtils.read(parsed.getFirst().toByteArray(), parsed.getSecond(), address);
+                                    if (config.getBoolean("sendHash", false)) {
                                         dataInfo.put("hash", JenaUtils.canonicalHash(m));
                                     }
                                     String normalized = JenaUtils.write(m, outputFormat);

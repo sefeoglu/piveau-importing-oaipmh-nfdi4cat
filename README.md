@@ -1,7 +1,7 @@
 # piveau importing oai-pmh
 Importing records via the OAI-PMH protocol and feeding a pipe.
 
-The service is based on the [pipe-connector](https://gitlab.fokus.fraunhofer.de/viaduct/pipe-connector) library. Any configuration applicable for the pipe-connector can also be used for this service.
+The service is based on the [pipe-connector](https://gitlab.fokus.fraunhofer.de/piveau/pipe/pipe-connector) library. Any configuration applicable for the pipe-connector can also be used for this service.
 
 ## Table of Contents
 1. [Build](#build)
@@ -29,7 +29,7 @@ $ mvn package
 ## Run
 
 ```bash
-$ java -jar target/piveau-importing-oaipmh-far.jar
+$ java -jar target/piveau-importing-oaipmh.jar
 ```
 
 ## Docker
@@ -61,6 +61,10 @@ _mandatory_
 
 _optional_
 
+* `queries`
+
+    Map of query parameters to use in request.
+    
 * `outputFormat` 
     
     Mimetype to use for payload. Default is `application/n-triples`
@@ -105,7 +109,7 @@ _optional_
     The hash value calculated at the source
 
 ### Environment
-See also [pipe-connector](https://gitlab.fokus.fraunhofer.de/viaduct/pipe-connector)
+See also [pipe-connector](https://gitlab.fokus.fraunhofer.de/piveau/pipe/pipe-connector)
 
 | Variable| Description | Default Value |
 | :--- | :--- | :--- |
