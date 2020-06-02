@@ -1,5 +1,13 @@
 # ChangeLog
 
+## [1.1.0](https://gitlab.fokus.fraunhofer.de/viaduct/piveau-importing-oaipmh/tags/1.1.0) (2020-06-02)
+
+**Added:**
+* `queries` pipe configuration
+
+**Changed:**
+* Build and packaging tool from shade plugin to vertx plugin
+ 
 ## [1.0.2](https://gitlab.fokus.fraunhofer.de/viaduct/piveau-importing-oaipmh/tags/1.0.2) (2020-02-28)
 
 **Changed:**
