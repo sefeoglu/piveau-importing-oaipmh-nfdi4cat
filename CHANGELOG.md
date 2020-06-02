@@ -1,5 +1,7 @@
 # ChangeLog
 
+## [1.1.0](https://gitlab.fokus.fraunhofer.de/viaduct/piveau-importing-oaipmh/tags/1.1.0) (2020-06-02)
+
 **Added:**
 * `queries` pipe configuration
 
