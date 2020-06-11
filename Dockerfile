@@ -1,6 +1,6 @@
 FROM openjdk:11-jre
 
-ENV VERTICLE_FILE piveau-importing-oaipmh.jar
+ENV VERTICLE_FILE importing-oaipmh.jar
 
 # Set the location of the verticles
 ENV VERTICLE_HOME /usr/verticles
