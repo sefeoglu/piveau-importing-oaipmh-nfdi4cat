@@ -1,5 +1,10 @@
 # ChangeLog
 
+## [1.1.1](https://gitlab.fokus.fraunhofer.de/piveau/consus/piveau-consus-importing-oaipmh/tags/1.1.1) (2020-06-18)
+
+**Changed:**
+* Serialize pipe startTime as ISO standard string
+ 
 ## [1.1.0](https://gitlab.fokus.fraunhofer.de/viaduct/piveau-importing-oaipmh/tags/1.1.0) (2020-06-02)
 
 **Added:**
