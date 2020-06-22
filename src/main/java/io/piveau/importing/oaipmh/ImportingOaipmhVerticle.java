@@ -140,6 +140,9 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                             String output = new XMLOutputter(Format.getPrettyFormat()).outputString(dataset);
 
                             if (identifier != null) {
+                                if (identifiers.contains(identifier.getTextTrim())) {
+                                    pipeContext.log().warn("Identifier duplication: {}", identifier.getTextTrim());
+                                }
                                 identifiers.add(identifier.getTextTrim());
                                 ObjectNode dataInfo = new ObjectMapper().createObjectNode()
                                         .put("total", result.completeSize())
