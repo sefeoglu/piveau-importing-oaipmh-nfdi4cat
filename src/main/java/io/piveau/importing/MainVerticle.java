@@ -17,7 +17,7 @@ public class MainVerticle extends AbstractVerticle {
             if (result.succeeded()) {
                 PipeConnector.create(vertx, cr -> {
                     if (cr.succeeded()) {
-                        cr.result().consumer(ImportingOaipmhVerticle.ADDRESS);
+                        cr.result().publishTo(ImportingOaipmhVerticle.ADDRESS);
                         startPromise.complete();
                     } else {
                         startPromise.fail(cr.cause());
