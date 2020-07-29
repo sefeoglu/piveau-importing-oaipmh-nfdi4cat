@@ -49,6 +49,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
     private CircuitBreaker breaker;
 
     private int defaultDelay;
+    private String defaultOaiPmhAdapterUri;
 
     @Override
     public void start(Promise<Void> startPromise) {
@@ -60,11 +61,14 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
 
         ConfigStoreOptions envStoreOptions = new ConfigStoreOptions()
                 .setType("env")
-                .setConfig(new JsonObject().put("keys", new JsonArray().add("PIVEAU_IMPORTING_SEND_LIST_DELAY")));
+                .setConfig(new JsonObject().put("keys", new JsonArray()
+                        .add("PIVEAU_IMPORTING_SEND_LIST_DELAY")
+                        .add("PIVEAU_OAIPMH_ADAPTER_URI")));
         ConfigRetriever retriever = ConfigRetriever.create(vertx, new ConfigRetrieverOptions().addStore(envStoreOptions));
         retriever.getConfig(ar -> {
             if (ar.succeeded()) {
                 defaultDelay = ar.result().getInteger("PIVEAU_IMPORTING_SEND_LIST_DELAY", 8000);
+                defaultOaiPmhAdapterUri = ar.result().getString("PIVEAU_OAIPMH_ADAPTER_URI");
                 startPromise.complete();
             } else {
                 startPromise.fail(ar.cause());
@@ -85,13 +89,22 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
     private void fetch(String resumptionToken, PipeContext pipeContext, List<String> identifiers) {
 
         JsonObject config = pipeContext.getConfig();
-        String address = config.getString("address");
+
+        String tmp = config.getString("address", defaultOaiPmhAdapterUri);
+        if (config.containsKey("resource")) {
+            tmp += "/" + config.getString("resource");
+        }
+        final String address = tmp;
 
         HttpRequest<Buffer> request = client.getAbs(address);
 
+        if (config.containsKey("metadata")) {
+            request.addQueryParam("metadataPrefix", config.getString("metadata", "dcat_ap"));
+        }
+
         if (config.containsKey("queries")) {
             JsonObject queries = config.getJsonObject("queries");
-            queries.getMap().forEach((key, value) -> request.addQueryParam(key, value.toString()));
+            queries.getMap().forEach((key, value) -> request.setQueryParam(key, value.toString()));
         }
 
         if (!request.queryParams().contains("verb")) {

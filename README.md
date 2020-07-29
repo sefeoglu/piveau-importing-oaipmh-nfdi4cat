@@ -1,7 +1,7 @@
 # piveau importing oai-pmh
 Importing records via the OAI-PMH protocol and feeding a pipe.
 
-The service is based on the [pipe-connector](https://gitlab.fokus.fraunhofer.de/piveau/pipe/pipe-connector) library. Any configuration applicable for the pipe-connector can also be used for this service.
+The service is based on the [piveau-pipe-connector](https://gitlab.fokus.fraunhofer.de/piveau/pipe/piveau-pipe-connector) library. Any configuration applicable for the piveau-pipe-connector can also be used for this service.
 
 ## Table of Contents
 1. [Build](#build)
@@ -21,15 +21,15 @@ Requirements:
  * Java 11
 
 ```bash
-$ git clone https://gitlab.fokus.fraunhofer.de/viaduct/piveau-importing-oaipmh.git
-$ cd piveau-importing-oaipmh
+$ git clone https://gitlab.fokus.fraunhofer.de/piveau/consus/piveau-consus-importing-oaipmh.git
+$ cd piveau-consus-importing-oaipmh
 $ mvn package
 ```
 
 ## Run
 
 ```bash
-$ java -jar target/piveau-importing-oaipmh.jar
+$ java -jar target/importing-oaipmh.jar
 ```
 
 ## Docker
@@ -109,11 +109,12 @@ _optional_
     The hash value calculated at the source
 
 ### Environment
-See also [pipe-connector](https://gitlab.fokus.fraunhofer.de/piveau/pipe/pipe-connector)
+See also [piveau-pipe-connector](https://gitlab.fokus.fraunhofer.de/piveau/pipe/piveau-pipe-connector)
 
 | Variable| Description | Default Value |
 | :--- | :--- | :--- |
 | `PIVEAU_IMPORTING_SEND_LIST_DELAY` | The delay in millisecond for sending the identifier list after the last dataset | `8000` |
+| `PIVEAU_OAIPMH_ADAPTER_URI` | The address of the oai-pmh adapter | - |
 
 ### Logging
 See [logback](https://logback.qos.ch/documentation.html) documentation for more details
@@ -129,4 +130,4 @@ See [logback](https://logback.qos.ch/documentation.html) documentation for more 
 
 ## License
 
-[The MIT License](LICENSE.md)
+[Apache License, Version 2.0](LICENSE.md)

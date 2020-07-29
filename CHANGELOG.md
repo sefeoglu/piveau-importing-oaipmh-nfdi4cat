@@ -1,5 +1,11 @@
 # ChangeLog
 
+**Added:**
+* Configurable default oaipmh adapter uri
+
+**Changed:**
+* Configuration in segment config of pipe
+ 
 ## [1.1.1](https://gitlab.fokus.fraunhofer.de/piveau/consus/piveau-consus-importing-oaipmh/tags/1.1.1) (2020-06-18)
 
 **Changed:**
