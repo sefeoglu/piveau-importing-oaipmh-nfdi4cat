@@ -1,5 +1,7 @@
 # ChangeLog
 
+## [1.2.0](https://gitlab.fokus.fraunhofer.de/piveau/consus/piveau-consus-importing-oaipmh/tags/1.2.0) (2020-07-30)
+
 **Added:**
 * Configurable default oaipmh adapter uri
 
