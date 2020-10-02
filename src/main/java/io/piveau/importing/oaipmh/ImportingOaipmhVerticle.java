@@ -51,6 +51,8 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
     private int defaultDelay;
     private String defaultOaiPmhAdapterUri;
 
+    private static final List<String> dcatFormats = List.of("dcat_ap", "dcat");
+
     @Override
     public void start(Promise<Void> startPromise) {
         vertx.eventBus().consumer(ADDRESS, this::handlePipe);
@@ -98,8 +100,9 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
 
         HttpRequest<Buffer> request = client.getAbs(address);
 
-        if (config.containsKey("metadata")) {
-            request.addQueryParam("metadataPrefix", config.getString("metadata", "dcat_ap"));
+        String metadata = config.getString("metadata", "dcat_ap");
+        if (!request.queryParams().contains("metadataPrefix")) {
+            request.addQueryParam("metadataPrefix", metadata);
         }
 
         if (config.containsKey("queries")) {
@@ -158,29 +161,29 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                                 }
                                 identifiers.add(identifier.getTextTrim());
                                 ObjectNode dataInfo = new ObjectMapper().createObjectNode()
-                                        .put("total", result.completeSize())
+                                        .put("total", result.completeSize() != -1 ? result.completeSize() : records.size())
                                         .put("counter", identifiers.size())
                                         .put("identifier", identifier.getTextTrim())
                                         .put("catalogue", config.getString("catalogue"));
 
-                                output = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                                        "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" >\n" +
-                                        output +
-                                        "\n</rdf:RDF>";
+                                if (dcatFormats.contains(metadata)) {
+                                    output = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
+                                            "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" >\n" +
+                                            output +
+                                            "\n</rdf:RDF>";
 
-                                Pair<ByteArrayOutputStream, String> parsed = PreProcessing.preProcess(output.getBytes(), "application/rdf+xml", address);
-
-                                try {
-                                    Model m = JenaUtils.read(parsed.getFirst().toByteArray(), parsed.getSecond(), address);
-                                    if (config.getBoolean("sendHash", false)) {
-                                        dataInfo.put("hash", JenaUtils.canonicalHash(m));
+                                    Pair<ByteArrayOutputStream, String> parsed = PreProcessing.preProcess(output.getBytes(), "application/rdf+xml", address);
+                                    output = parsed.getFirst().toString();
+                                    try {
+                                        Model m = JenaUtils.read(output.getBytes(), parsed.getSecond(), address);
+                                        output = JenaUtils.write(m, outputFormat);
+                                    } catch (Exception e) {
+                                        pipeContext.log().error("Normalize model", e);
                                     }
-                                    String normalized = JenaUtils.write(m, outputFormat);
-                                    pipeContext.setResult(normalized, outputFormat, dataInfo).forward();
-                                    pipeContext.log().info("Data imported: {}", dataInfo.toString());
-                                } catch (Exception e) {
-                                    pipeContext.log().error("Normalize model", e);
                                 }
+                                pipeContext.setResult(output, outputFormat, dataInfo).forward();
+                                pipeContext.log().info("Data imported: {}", dataInfo.toString());
+                                pipeContext.log().debug("Data content: {}", output);
                             } else {
                                 pipeContext.log().error("No identifier: {}", output);
                             }
