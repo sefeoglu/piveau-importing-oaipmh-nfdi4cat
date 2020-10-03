@@ -19,7 +19,7 @@
         "body": {
           "config": {
             "address": "https://zenodo.org/oai2d",
-            "metadata": "oai_dc",
+            "metadata": "dcat",
             "queries": {
               "set": "user-openaire-research-graph"
             },
