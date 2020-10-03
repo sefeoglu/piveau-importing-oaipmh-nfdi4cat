@@ -69,9 +69,9 @@ public class OAIPMHResult extends HttpResult<Document> {
 		return element != null ? element.getTextTrim() : null;
 	}
 
-	public String completeSize() {
+	public int completeSize() {
 		Element element = token.evaluateFirst(result);
-		return element != null ? element.getAttributeValue("completeListSize") : null;
+		return element != null ? Integer.parseInt(element.getAttributeValue("completeListSize")) : -1;
 	}
 
 }

@@ -17,13 +17,13 @@
           "processed": false
         },
         "body": {
-          "endpoint": {
-            "address": "http://localhost:8080/pipe"
-          },
           "config": {
-            "address": "http://localhost:8098/import",
-            "outputFormat": "text/turtle",
-            "catalogue": "test-catalogue"
+            "address": "https://zenodo.org/oai2d",
+            "metadata": "oai_dc",
+            "queries": {
+              "set": "user-openaire-research-graph"
+            },
+            "catalogue": "openaire"
           }
         }
       }
