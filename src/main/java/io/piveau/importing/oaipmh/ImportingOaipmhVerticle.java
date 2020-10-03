@@ -167,10 +167,10 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                                         .put("catalogue", config.getString("catalogue"));
 
                                 if (dcatFormats.contains(metadata)) {
-                                    output = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                                            "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" >\n" +
-                                            output +
-                                            "\n</rdf:RDF>";
+//                                    output = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
+//                                            "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" >\n" +
+//                                            output +
+//                                            "\n</rdf:RDF>";
 
                                     Pair<ByteArrayOutputStream, String> parsed = PreProcessing.preProcess(output.getBytes(), "application/rdf+xml", address);
                                     output = parsed.getFirst().toString();
