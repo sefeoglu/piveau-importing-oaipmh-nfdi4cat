@@ -16,7 +16,7 @@
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
         <maven.compiler.release>11</maven.compiler.release>
         <buildTimestamp>${maven.build.timestamp}</buildTimestamp>
-        <vertx.version>3.9.3</vertx.version>
+        <vertx.version>4.0.0</vertx.version>
         <vertx.verticle>io.piveau.importing.MainVerticle</vertx.verticle>
     </properties>
 
@@ -24,7 +24,7 @@
         <repository>
             <id>paca</id>
             <name>paca</name>
-            <url>https://paca.okd.fokus.fraunhofer.de/repository/maven-public/</url>
+            <url>https://paca.fokus.fraunhofer.de/repository/maven-public/</url>
         </repository>
     </repositories>
 
@@ -89,13 +89,12 @@
         <dependency>
             <groupId>io.piveau.utils</groupId>
             <artifactId>piveau-utils</artifactId>
-            <version>4.3.1</version>
+            <version>6.0.0-SNAPSHOT</version>
         </dependency>
-
         <dependency>
             <groupId>io.piveau.pipe</groupId>
             <artifactId>pipe-connector</artifactId>
-            <version>4.2.4</version>
+            <version>5.0.0</version>
         </dependency>
 
         <dependency>
@@ -133,7 +132,7 @@
             <plugin>
                 <groupId>io.reactiverse</groupId>
                 <artifactId>vertx-maven-plugin</artifactId>
-                <version>1.0.22</version>
+                <version>1.0.23</version>
                 <executions>
                     <execution>
                         <id>vmp</id>
