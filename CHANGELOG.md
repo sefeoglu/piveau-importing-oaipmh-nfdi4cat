@@ -1,5 +1,7 @@
 # ChangeLog
 
+## [1.3.0](https://gitlab.fokus.fraunhofer.de/piveau/consus/piveau-consus-importing-oaipmh/tags/1.3.0) (2021-01-30)
+
 **Added:**
 * Generic record forwarding
 
