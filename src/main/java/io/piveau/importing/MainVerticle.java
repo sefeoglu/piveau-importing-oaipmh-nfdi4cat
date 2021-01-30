@@ -13,20 +13,13 @@ public class MainVerticle extends AbstractVerticle {
 
     @Override
     public void start(Promise<Void> startPromise) {
-        vertx.deployVerticle(ImportingOaipmhVerticle.class, new DeploymentOptions().setWorker(true), result -> {
-            if (result.succeeded()) {
-                PipeConnector.create(vertx, cr -> {
-                    if (cr.succeeded()) {
-                        cr.result().publishTo(ImportingOaipmhVerticle.ADDRESS);
-                        startPromise.complete();
-                    } else {
-                        startPromise.fail(cr.cause());
-                    }
-                });
-            } else {
-                startPromise.fail(result.cause());
-            }
-        });
+        vertx.deployVerticle(ImportingOaipmhVerticle.class, new DeploymentOptions().setWorker(true))
+                .compose(id -> PipeConnector.create(vertx))
+                .onSuccess(connector -> {
+                    connector.publishTo(ImportingOaipmhVerticle.ADDRESS);
+                    startPromise.complete();
+                })
+                .onFailure(startPromise::fail);
     }
 
     public static void main(String[] args) {
