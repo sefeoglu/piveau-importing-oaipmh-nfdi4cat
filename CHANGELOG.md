@@ -1,5 +1,10 @@
 # ChangeLog
 
+## [1.3.1](https://gitlab.fokus.fraunhofer.de/piveau/consus/piveau-consus-importing-oaipmh/tags/1.3.1) (2021-02-12)
+
+**Fixed:**
+* Empty dataset record check
+
 ## [1.3.0](https://gitlab.fokus.fraunhofer.de/piveau/consus/piveau-consus-importing-oaipmh/tags/1.3.0) (2021-01-30)
 
 **Added:**
@@ -45,7 +50,7 @@
 * buildInfo.json for build info via `/health` path
 * config.schema.json
 * Configuration change listener
-* `PIVEAU_LOG_LEVEL` for general `io.piveau' package log level configuration
+* `PIVEAU_LOG_LEVEL` for general `io.piveau` package log level configuration
 * `sendHash` for configuring optional hash calculation in pipe
 * `sendHash` to config schema
  
