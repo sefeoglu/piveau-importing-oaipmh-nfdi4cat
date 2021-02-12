@@ -152,40 +152,44 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
 
                             Text identifier = identifierExpression.evaluateFirst(doc);
                             Element dataset = metadataExpression.evaluateFirst(doc);
+                            if (dataset != null) {
+                                String output = new XMLOutputter(Format.getPrettyFormat()).outputString(dataset);
 
-                            String output = new XMLOutputter(Format.getPrettyFormat()).outputString(dataset);
+                                if (identifier != null) {
+                                    if (identifiers.contains(identifier.getTextTrim())) {
+                                        pipeContext.log().warn("Identifier duplication: {}", identifier.getTextTrim());
+                                    }
 
-                            if (identifier != null) {
-                                if (identifiers.contains(identifier.getTextTrim())) {
-                                    pipeContext.log().warn("Identifier duplication: {}", identifier.getTextTrim());
-                                }
-                                identifiers.add(identifier.getTextTrim());
-                                ObjectNode dataInfo = new ObjectMapper().createObjectNode()
-                                        .put("total", result.completeSize() != -1 ? result.completeSize() : records.size())
-                                        .put("counter", identifiers.size())
-                                        .put("identifier", identifier.getTextTrim())
-                                        .put("catalogue", config.getString("catalogue"));
+                                    identifiers.add(identifier.getTextTrim());
+                                    ObjectNode dataInfo = new ObjectMapper().createObjectNode()
+                                            .put("total", result.completeSize() != -1 ? result.completeSize() : records.size())
+                                            .put("counter", identifiers.size())
+                                            .put("identifier", identifier.getTextTrim())
+                                            .put("catalogue", config.getString("catalogue"));
 
-                                if (dcatFormats.contains(metadata)) {
+                                    if (dcatFormats.contains(metadata)) {
 //                                    output = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
 //                                            "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\" >\n" +
 //                                            output +
 //                                            "\n</rdf:RDF>";
 
-                                    Pair<ByteArrayOutputStream, String> parsed = PreProcessing.preProcess(output.getBytes(), "application/rdf+xml", address);
-                                    output = parsed.getFirst().toString();
-                                    try {
-                                        Model m = JenaUtils.read(output.getBytes(), parsed.getSecond(), address);
-                                        output = JenaUtils.write(m, outputFormat);
-                                    } catch (Exception e) {
-                                        pipeContext.log().error("Normalize model", e);
+                                        Pair<ByteArrayOutputStream, String> parsed = PreProcessing.preProcess(output.getBytes(), "application/rdf+xml", address);
+                                        output = parsed.getFirst().toString();
+                                        try {
+                                            Model m = JenaUtils.read(output.getBytes(), parsed.getSecond(), address);
+                                            output = JenaUtils.write(m, outputFormat);
+                                        } catch (Exception e) {
+                                            pipeContext.log().error("Normalize model", e);
+                                        }
                                     }
+                                    pipeContext.setResult(output, outputFormat, dataInfo).forward();
+                                    pipeContext.log().info("Data imported: {}", dataInfo.toString());
+                                    pipeContext.log().debug("Data content: {}", output);
+                                } else {
+                                    pipeContext.log().error("No identifier: {}", output);
                                 }
-                                pipeContext.setResult(output, outputFormat, dataInfo).forward();
-                                pipeContext.log().info("Data imported: {}", dataInfo.toString());
-                                pipeContext.log().debug("Data content: {}", output);
                             } else {
-                                pipeContext.log().error("No identifier: {}", output);
+                                pipeContext.log().error("No dataset: {}", identifier);
                             }
                         });
                         if (result.token() != null && !result.token().isEmpty()) {
