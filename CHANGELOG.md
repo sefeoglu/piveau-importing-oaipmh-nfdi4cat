@@ -1,11 +1,11 @@
 # ChangeLog
 
-## [1.3.1](https://gitlab.fokus.fraunhofer.de/piveau/consus/piveau-consus-importing-oaipmh/tags/1.3.1) (2021-02-12)
+## 1.3.1 (2021-02-12)
 
 **Fixed:**
 * Empty dataset record check
 
-## [1.3.0](https://gitlab.fokus.fraunhofer.de/piveau/consus/piveau-consus-importing-oaipmh/tags/1.3.0) (2021-01-30)
+## 1.3.0 (2021-01-30)
 
 **Added:**
 * Generic record forwarding
@@ -13,7 +13,7 @@
 **Changed:**
 * Switch to Vert.x 4.0.0
 
-## [1.2.0](https://gitlab.fokus.fraunhofer.de/piveau/consus/piveau-consus-importing-oaipmh/tags/1.2.0) (2020-07-30)
+## 1.2.0 (2020-07-30)
 
 **Added:**
 * Configurable default oaipmh adapter uri
@@ -21,12 +21,12 @@
 **Changed:**
 * Configuration in segment config of pipe
  
-## [1.1.1](https://gitlab.fokus.fraunhofer.de/piveau/consus/piveau-consus-importing-oaipmh/tags/1.1.1) (2020-06-18)
+## 1.1.1 (2020-06-18)
 
 **Changed:**
 * Serialize pipe startTime as ISO standard string
  
-## [1.1.0](https://gitlab.fokus.fraunhofer.de/viaduct/piveau-importing-oaipmh/tags/1.1.0) (2020-06-02)
+## 1.1.0 (2020-06-02)
 
 **Added:**
 * `queries` pipe configuration
@@ -34,17 +34,17 @@
 **Changed:**
 * Build and packaging tool from shade plugin to vertx plugin
  
-## [1.0.2](https://gitlab.fokus.fraunhofer.de/viaduct/piveau-importing-oaipmh/tags/1.0.2) (2020-02-28)
+## 1.0.2 (2020-02-28)
 
 **Changed:**
 * Connector lib update
 
-## [1.0.1](https://gitlab.fokus.fraunhofer.de/viaduct/piveau-importing-oaipmh/tags/1.0.1) (2019-12-14)
+## 1.0.1 (2019-12-14)
 
 **Added:**
 * Pre-processing to fix malformed URIRefs
 
-## [1.0.0](https://gitlab.fokus.fraunhofer.de/viaduct/piveau-importing-oaipmh/tags/1.0.0) (2019-11-08)
+## 1.0.0 (2019-11-08)
 
 **Added:**
 * buildInfo.json for build info via `/health` path
@@ -63,7 +63,7 @@
 **Fixed:**
 * Update all dependencies
 
-## [0.1.0](https://gitlab.fokus.fraunhofer.de/viaduct/piveau-importing-oaipmh/tags/0.1.0) (2019-05-17)
+## 0.1.0 (2019-05-17)
 
 **Added:**
 * `catalogue` read from configuration and pass it to the info object
@@ -76,5 +76,6 @@
 **Removed:**
 * `mode` configuration and fetchIdentifier
 
-## [0.0.1](https://gitlab.fokus.fraunhofer.de/viaduct/piveau-importing-oaipmh/tags/0.0.1) (2019-05-03)
+## 0.0.1 (2019-05-03)
+
 Initial release
