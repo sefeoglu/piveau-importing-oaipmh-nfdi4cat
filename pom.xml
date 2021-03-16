@@ -16,7 +16,7 @@
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
         <maven.compiler.release>11</maven.compiler.release>
         <buildTimestamp>${maven.build.timestamp}</buildTimestamp>
-        <vertx.version>4.0.2</vertx.version>
+        <vertx.version>4.0.3</vertx.version>
         <vertx.verticle>io.piveau.importing.MainVerticle</vertx.verticle>
     </properties>
 
@@ -89,12 +89,12 @@
         <dependency>
             <groupId>io.piveau.utils</groupId>
             <artifactId>piveau-utils</artifactId>
-            <version>6.0.0</version>
+            <version>6.2.0</version>
         </dependency>
         <dependency>
             <groupId>io.piveau.pipe</groupId>
             <artifactId>pipe-connector</artifactId>
-            <version>5.1.0</version>
+            <version>5.2.1</version>
         </dependency>
 
         <dependency>
