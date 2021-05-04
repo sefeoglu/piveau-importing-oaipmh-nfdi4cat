@@ -30,12 +30,16 @@ import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 import org.jdom2.xpath.XPathExpression;
 import org.jdom2.xpath.XPathFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.*;
 
 public class ImportingOaipmhVerticle extends AbstractVerticle {
+
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     private static final Namespace oaiNamespace = Namespace.getNamespace("oai", "http://www.openarchives.org/OAI/2.0/");
 
@@ -62,10 +66,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                 .retryPolicy(count -> count * 2000L);
 
         ConfigStoreOptions envStoreOptions = new ConfigStoreOptions()
-                .setType("env")
-                .setConfig(new JsonObject().put("keys", new JsonArray()
-                        .add("PIVEAU_IMPORTING_SEND_LIST_DELAY")
-                        .add("PIVEAU_OAIPMH_ADAPTER_URI")));
+                .setType("env");
         ConfigRetriever retriever = ConfigRetriever.create(vertx, new ConfigRetrieverOptions().addStore(envStoreOptions));
         retriever.getConfig(ar -> {
             if (ar.succeeded()) {
