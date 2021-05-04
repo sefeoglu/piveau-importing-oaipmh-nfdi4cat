@@ -1,7 +1,7 @@
 # piveau importing oai-pmh
 Importing records via the OAI-PMH protocol and feeding a pipe.
 
-The service is based on the [piveau-pipe-connector](https://gitlab.fokus.fraunhofer.de/piveau/pipe/piveau-pipe-connector) library. Any configuration applicable for the piveau-pipe-connector can also be used for this service.
+The service is based on the piveau-pipe-connector library. Any configuration applicable for the piveau-pipe-connector can also be used for this service.
 
 ## Table of Contents
 1. [Build](#build)
@@ -21,7 +21,7 @@ Requirements:
  * Java 11
 
 ```bash
-$ git clone https://gitlab.fokus.fraunhofer.de/piveau/consus/piveau-consus-importing-oaipmh.git
+$ git clone <gitrepouri>
 $ cd piveau-consus-importing-oaipmh
 $ mvn package
 ```
@@ -109,7 +109,7 @@ _optional_
     The hash value calculated at the source
 
 ### Environment
-See also [piveau-pipe-connector](https://gitlab.fokus.fraunhofer.de/piveau/pipe/piveau-pipe-connector)
+See also piveau-pipe-connector
 
 | Variable| Description | Default Value |
 | :--- | :--- | :--- |
