@@ -38,7 +38,7 @@
     <logger name="io.netty" level="warn"/>
     <logger name="io.vertx" level="info"/>
     <logger name="com.hazelcast" level="debug"/>
-    <logger name="io.piveau" level="${PIVEAU_LOG_LEVEL:-INFO}"/>
+    <logger name="io.piveau" level="${PIVEAU_LOG_LEVEL:-DEBUG}"/>
 
     <logger name="pipe" level="${PIVEAU_PIPE_LOG_LEVEL:-INFO}" additivity="false">
         <appender-ref ref="${pipeAppender}" />
