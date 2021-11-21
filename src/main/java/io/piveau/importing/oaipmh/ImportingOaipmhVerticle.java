@@ -97,10 +97,13 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
 
         HttpRequest<Buffer> request = client.getAbs(address);
 
-        String metadata = config.getString("metadata", "dcat_ap");
+        String metadataPrefix = config.getString("metadata", "dcat_ap");
         if (!request.queryParams().contains("metadataPrefix")) {
-            request.addQueryParam("metadataPrefix", metadata);
+            request.addQueryParam("metadataPrefix", metadataPrefix);
+        } else {
+            metadataPrefix = request.queryParams().get("metadataPrefix");
         }
+        final String metadata = metadataPrefix;
 
         if (config.containsKey("queries")) {
             JsonObject queries = config.getJsonObject("queries");
@@ -115,44 +118,42 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
             request.addQueryParam("resumptionToken", resumptionToken);
         }
 
-        breaker.<HttpResponse<Buffer>>execute(fut -> request.send(ar -> {
-            if (ar.succeeded()) {
-                HttpResponse<Buffer> response = ar.result();
-                if (response.statusCode() == 200) {
-                    fut.complete(ar.result());
-                } else {
-                    pipeContext.log().warn("{} - {}", response.statusMessage(), response.bodyAsString());
-                    fut.fail(response.statusMessage() + "\n" + response.bodyAsString());
-                }
-            } else {
-                pipeContext.log().error("Sent metadata request", ar.cause());
-                fut.fail(ar.cause());
-            }
-        })).onComplete(ar -> {
-            if (ar.succeeded()) {
-                HttpResponse<Buffer> response = ar.result();
-                ByteArrayInputStream stream = new ByteArrayInputStream(response.bodyAsString().getBytes());
-                try {
-                    Document document = new SAXBuilder().build(stream);
+        breaker.<HttpResponse<Buffer>>execute(promise -> request.send()
+                        .onSuccess(response -> {
+                            if (response.statusCode() == 200) {
+                                promise.complete(response);
+                            } else {
+                                pipeContext.log().warn("{} - {}", response.statusMessage(), response.bodyAsString());
+                                promise.fail(response.statusMessage() + "\n" + response.bodyAsString());
+                            }
+                        })
+                        .onFailure(cause -> {
+                            pipeContext.log().error("Sent metadata request", cause);
+                            promise.fail(cause);
+                        })
+                )
+                .onSuccess(response -> {
+                    ByteArrayInputStream stream = new ByteArrayInputStream(response.body().getBytes());
+                    try {
+                        Document document = new SAXBuilder().build(stream);
 
-                    OAIPMHResponse oaipmhResponse = new OAIPMHResponse(document);
-                    if (oaipmhResponse.isSuccess()) {
-                        String outputFormat = config.getString("outputFormat", "application/n-triples");
+                        OAIPMHResponse oaipmhResponse = new OAIPMHResponse(document);
+                        if (oaipmhResponse.isSuccess()) {
+                            String outputFormat = config.getString("outputFormat", "application/n-triples");
 
-                        XPathFactory xpFactory = XPathFactory.instance();
-                        XPathExpression<Text> identifierExpression = xpFactory.compile(XML_PATH_OAIPMH_RECORD_IDENTIFIER, Filters.text(), Collections.emptyMap(), oaiNamespace);
-                        XPathExpression<Element> metadataExpression = xpFactory.compile(XML_PATH_OAIPMH_RECORD_METADATA, Filters.element(), Collections.emptyMap(), oaiNamespace);
+                            XPathFactory xpFactory = XPathFactory.instance();
+                            XPathExpression<Text> identifierExpression = xpFactory.compile(XML_PATH_OAIPMH_RECORD_IDENTIFIER, Filters.text(), Collections.emptyMap(), oaiNamespace);
+                            XPathExpression<Element> metadataExpression = xpFactory.compile(XML_PATH_OAIPMH_RECORD_METADATA, Filters.element(), Collections.emptyMap(), oaiNamespace);
 
-                        OAIPMHResult result = oaipmhResponse.getResult();
-                        List<Document> records = result.getRecords();
-                        records.forEach(doc -> {
+                            OAIPMHResult result = oaipmhResponse.getResult();
+                            List<Document> records = result.getRecords();
+                            records.forEach(doc -> {
 
-                            Text identifier = identifierExpression.evaluateFirst(doc);
-                            Element dataset = metadataExpression.evaluateFirst(doc);
-                            if (dataset != null) {
-                                String output = new XMLOutputter(Format.getPrettyFormat()).outputString(dataset);
+                                Text identifier = identifierExpression.evaluateFirst(doc);
+                                Element dataset = metadataExpression.evaluateFirst(doc);
+                                if (dataset != null && identifier != null) {
+                                    String output = new XMLOutputter(Format.getPrettyFormat()).outputString(dataset);
 
-                                if (identifier != null) {
                                     if (identifiers.contains(identifier.getTextTrim())) {
                                         pipeContext.log().warn("Identifier duplication: {}", identifier.getTextTrim());
                                     }
@@ -166,9 +167,10 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
 
                                     if (dcatFormats.contains(metadata)) {
                                         Pair<ByteArrayOutputStream, String> parsed = PreProcessing.preProcess(output.getBytes(), "application/rdf+xml", address);
-                                        output = parsed.getFirst().toString();
+                                        byte[] outputBytes = parsed.getFirst().toByteArray();
                                         try {
-                                            Model m = JenaUtils.read(output.getBytes(), parsed.getSecond(), address);
+                                            Model m = JenaUtils.read(outputBytes, parsed.getSecond(), address);
+                                            parsed.getFirst().close();
                                             output = JenaUtils.write(m, outputFormat);
                                         } catch (Exception e) {
                                             pipeContext.log().error("Normalize model", e);
@@ -178,35 +180,29 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                                     pipeContext.log().info("Data imported: {}", dataInfo.toString());
                                     pipeContext.log().debug("Data content: {}", output);
                                 } else {
-                                    pipeContext.log().error("No identifier: {}", output);
+                                    pipeContext.log().error("No dataset or identifier");
                                 }
-                            } else {
-                                pipeContext.log().error("No dataset: {}", identifier);
-                            }
-                        });
-                        if (result.token() != null && !result.token().isEmpty()) {
-                            fetch(result.token(), pipeContext, identifiers);
-                        } else {
-                            pipeContext.log().info("Import metadata finished");
-                            int delay = pipeContext.getConfig().getInteger("sendListDelay", defaultDelay);
-                            vertx.setTimer(delay, t -> {
-                                ObjectNode info = new ObjectMapper().createObjectNode()
-                                        .put("content", "identifierList")
-                                        .put("catalogue", config.getString("catalogue"));
-                                pipeContext.setResult(new JsonArray(identifiers).encodePrettily(), "application/json", info).forward();
                             });
+                            if (result.token() != null && !result.token().isEmpty()) {
+                                fetch(result.token(), pipeContext, identifiers);
+                            } else {
+                                pipeContext.log().info("Import metadata finished");
+                                int delay = pipeContext.getConfig().getInteger("sendListDelay", defaultDelay);
+                                vertx.setTimer(delay, t -> {
+                                    ObjectNode info = new ObjectMapper().createObjectNode()
+                                            .put("content", "identifierList")
+                                            .put("catalogue", config.getString("catalogue"));
+                                    pipeContext.setResult(new JsonArray(identifiers).encodePrettily(), "application/json", info).forward();
+                                });
+                            }
+                        } else {
+                            pipeContext.setFailure(oaipmhResponse.getError().getMessage());
                         }
-                    } else {
-                        pipeContext.setFailure(oaipmhResponse.getError().getMessage());
+                    } catch (Exception e) {
+                        pipeContext.setFailure(e);
                     }
-                } catch (Exception e) {
-                    pipeContext.setFailure(e);
-                }
-            } else {
-                pipeContext.setFailure(ar.cause());
-            }
-        });
-
+                })
+                .onFailure(pipeContext::setFailure);
     }
 
 }
