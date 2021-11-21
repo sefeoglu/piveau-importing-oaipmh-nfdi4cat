@@ -165,6 +165,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                                             .put("identifier", identifier.getTextTrim())
                                             .put("catalogue", config.getString("catalogue"));
 
+                                    String format = "application/rdf+xml";
                                     if (dcatFormats.contains(metadata)) {
                                         try {
                                             Pair<ByteArrayOutputStream, String> parsed = PreProcessing.preProcess(output.getBytes(), "application/rdf+xml", address);
@@ -172,11 +173,12 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                                             Model m = JenaUtils.read(outputBytes, parsed.getSecond(), address);
                                             parsed.getFirst().close();
                                             output = JenaUtils.write(m, outputFormat);
+                                            format = outputFormat;
                                         } catch (Exception e) {
                                             pipeContext.log().error("Normalize model", e);
                                         }
                                     }
-                                    pipeContext.setResult(output, outputFormat, dataInfo).forward();
+                                    pipeContext.setResult(output, format, dataInfo).forward();
                                     pipeContext.log().info("Data imported: {}", dataInfo.toString());
                                     pipeContext.log().debug("Data content: {}", output);
                                 } else {
