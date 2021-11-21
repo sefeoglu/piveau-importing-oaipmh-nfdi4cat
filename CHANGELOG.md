@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Unreleased
+
+**Fixed:**
+* Close streams explicitly
+
 ## 1.3.2 (2021-06-05)
 
 **Changed:**
