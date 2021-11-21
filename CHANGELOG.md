@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.3.3 (2021-11-21)
+
 **Fixed:**
 * Close streams explicitly
 
