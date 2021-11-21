@@ -166,9 +166,9 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                                             .put("catalogue", config.getString("catalogue"));
 
                                     if (dcatFormats.contains(metadata)) {
-                                        Pair<ByteArrayOutputStream, String> parsed = PreProcessing.preProcess(output.getBytes(), "application/rdf+xml", address);
-                                        byte[] outputBytes = parsed.getFirst().toByteArray();
                                         try {
+                                            Pair<ByteArrayOutputStream, String> parsed = PreProcessing.preProcess(output.getBytes(), "application/rdf+xml", address);
+                                            byte[] outputBytes = parsed.getFirst().toByteArray();
                                             Model m = JenaUtils.read(outputBytes, parsed.getSecond(), address);
                                             parsed.getFirst().close();
                                             output = JenaUtils.write(m, outputFormat);
