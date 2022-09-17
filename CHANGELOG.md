@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+**Fixed:**
+* Evaluate `preProcessing` from config for pre-processing 
+
+**Changed:**
+* Lib updates
+
 ## 1.3.4 (2022-04-20)
 
 **Changed:**

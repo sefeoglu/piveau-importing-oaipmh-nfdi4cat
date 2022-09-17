@@ -149,6 +149,10 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                             List<Document> records = result.getRecords();
                             records.forEach(doc -> {
 
+                                if (pipeContext.log().isDebugEnabled()) {
+                                    pipeContext.log().debug(new XMLOutputter(Format.getPrettyFormat()).outputString(doc));
+                                }
+
                                 Text identifier = identifierExpression.evaluateFirst(doc);
                                 Element dataset = metadataExpression.evaluateFirst(doc);
                                 if (dataset != null && identifier != null) {
@@ -166,7 +170,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                                             .put("catalogue", config.getString("catalogue"));
 
                                     String format = "application/rdf+xml";
-                                    if (dcatFormats.contains(metadata)) {
+                                    if (dcatFormats.contains(metadata) && config.getBoolean("preProcessing", false)) {
                                         try {
                                             Pair<ByteArrayOutputStream, String> parsed = PreProcessing.preProcess(output.getBytes(), "application/rdf+xml", address);
                                             byte[] outputBytes = parsed.getFirst().toByteArray();
@@ -175,7 +179,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                                             output = JenaUtils.write(m, outputFormat);
                                             format = outputFormat;
                                         } catch (Exception e) {
-                                            pipeContext.log().error("Normalize model", e);
+                                            pipeContext.log().error("Normalize model ({})", identifier, e);
                                         }
                                     }
                                     pipeContext.setResult(output, format, dataInfo).forward();
