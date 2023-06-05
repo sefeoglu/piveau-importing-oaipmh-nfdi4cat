@@ -2,7 +2,12 @@
 
 ## Unreleased
 
-## 1.3.5 (2023-14-30)
+## 1.3.6 (2023-06-05)
+
+**Changed:**
+* Update pipe model serialization with increased string size limitations
+
+## 1.3.5 (2023-14-03)
 
 **Fixed:**
 * Evaluate `preProcessing` from config for pre-processing 
