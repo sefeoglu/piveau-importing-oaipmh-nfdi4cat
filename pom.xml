@@ -16,7 +16,7 @@
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
         <maven.compiler.release>17</maven.compiler.release>
         <buildTimestamp>${maven.build.timestamp}</buildTimestamp>
-        <vertx.version>4.4.2</vertx.version>
+        <vertx.version>4.4.4</vertx.version>
         <vertx.verticle>io.piveau.importing.MainVerticle</vertx.verticle>
     </properties>
 
