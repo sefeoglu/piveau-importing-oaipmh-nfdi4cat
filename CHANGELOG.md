@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 1.3.7 (2023-07-07)
+
+**Changed:**
+* Connector update
+
 ## 1.3.6 (2023-06-05)
 
 **Changed:**
