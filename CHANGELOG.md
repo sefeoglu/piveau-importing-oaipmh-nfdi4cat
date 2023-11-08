@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 1.3.8 (2023-11-08)
+
+**Changed:**
+* Connector lib update, fixing run eviction during long time importing
+
 ## 1.3.7 (2023-07-07)
 
 **Changed:**
