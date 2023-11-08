@@ -59,7 +59,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
         client = WebClient.create(vertx);
 
         breaker = CircuitBreaker.create("oaipmh-breaker", vertx, new CircuitBreakerOptions().setMaxRetries(2).setTimeout(200000))
-                .retryPolicy(count -> count * 2000L);
+                .retryPolicy((t, count) -> count * 2000L);
 
         ConfigStoreOptions envStoreOptions = new ConfigStoreOptions()
                 .setType("env");
