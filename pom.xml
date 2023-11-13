@@ -81,12 +81,12 @@
         <dependency>
             <groupId>io.piveau.utils</groupId>
             <artifactId>piveau-utils</artifactId>
-            <version>10.6.2</version>
+            <version>10.7.2</version>
         </dependency>
         <dependency>
             <groupId>io.piveau.pipe</groupId>
             <artifactId>pipe-connector</artifactId>
-            <version>7.0.7</version>
+            <version>7.0.8</version>
         </dependency>
 
         <dependency>
