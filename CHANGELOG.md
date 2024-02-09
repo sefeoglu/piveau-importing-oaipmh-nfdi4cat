@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 1.3.9 (2024-02-09)
+
+**Changed:**
+* Lib dependency updates
+
 ## 1.3.8 (2023-11-08)
 
 **Changed:**
