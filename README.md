@@ -53,6 +53,9 @@ See also piveau-pipe-connector
 | `PIVEAU_IMPORTING_SEND_LIST_DELAY` | The delay in millisecond for sending the identifier list after the last dataset | `8000`        |
 | `PIVEAU_OAIPMH_ADAPTER_URI`        | The address of an oai-pmh adapter                                               | -             |
 
+### Pipe
+Service specific configurations for the pipe can be found  in [PIPE.md](PIPE.md)
+
 ### Logging
 See [logback](https://logback.qos.ch/documentation.html) documentation for more details
 

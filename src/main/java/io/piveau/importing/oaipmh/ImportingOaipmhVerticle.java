@@ -192,13 +192,14 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                             if (result.token() != null && !result.token().isEmpty()) {
                                 fetch(result.token(), pipeContext, identifiers);
                             } else {
-                                pipeContext.log().info("Import metadata finished");
                                 int delay = pipeContext.getConfig().getInteger("sendListDelay", defaultDelay);
                                 vertx.setTimer(delay, t -> {
                                     ObjectNode info = new ObjectMapper().createObjectNode()
                                             .put("content", "identifierList")
                                             .put("catalogue", config.getString("catalogue"));
                                     pipeContext.setResult(new JsonArray(identifiers).encodePrettily(), "application/json", info).forward();
+                                    pipeContext.log().info("Import metadata finished");
+                                    pipeContext.setRunFinished();
                                 });
                             }
                         } else {
