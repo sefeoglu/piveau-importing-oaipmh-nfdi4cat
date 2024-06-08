@@ -20,6 +20,14 @@
         <vertx.verticle>io.piveau.importing.MainVerticle</vertx.verticle>
     </properties>
 
+    <scm>
+        <url>${CI_PROJECT_URL}</url>
+        <developerConnection>
+            scm:git:https://${GITLAB_USER}:${GITLAB_TOKEN}@${CI_SERVER_FQDN}/${CI_PROJECT_PATH}.git
+        </developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
     <repositories>
         <repository>
             <id>paca</id>
@@ -81,12 +89,12 @@
         <dependency>
             <groupId>io.piveau.utils</groupId>
             <artifactId>piveau-utils</artifactId>
-            <version>11.0.4</version>
+            <version>11.0.5</version>
         </dependency>
         <dependency>
             <groupId>io.piveau.pipe</groupId>
             <artifactId>pipe-connector</artifactId>
-            <version>8.0.2</version>
+            <version>8.0.3</version>
         </dependency>
 
         <dependency>
@@ -134,9 +142,15 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
+            </plugin>
+            <plugin>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>3.0.1</version>
+                <configuration>
+                    <tagNameFormat>@{project.version}</tagNameFormat>
+                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
