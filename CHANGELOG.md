@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 1.3.10 (2024-06-08)
+
+**Changed:**
+* New connector with improved run API
+
 ## 1.3.9 (2024-02-09)
 
 **Changed:**
