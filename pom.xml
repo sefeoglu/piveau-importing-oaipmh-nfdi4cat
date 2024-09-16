@@ -7,7 +7,7 @@
     <packaging>jar</packaging>
     <version>1.3.10</version>
 
-    <name>piveau-consus-importing-oaipmh</name>
+    <name>piveau-consus-importing-oaipmh-nfdi4cat</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -110,7 +110,12 @@
             <artifactId>logback-classic</artifactId>
             <version>1.5.6</version>
         </dependency>
-
+        <!-- https://mvnrepository.com/artifact/org.json/json -->
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20210307</version>
+        </dependency>
     </dependencies>
 
     <build>

@@ -1,4 +1,4 @@
-# piveau importing oai-pmh
+# piveau importing oai-pmh nfdi4cat
 Importing records via the OAI-PMH protocol and feeding a pipe.
 
 The service is based on the piveau-pipe-connector library. Any configuration applicable for the piveau-pipe-connector can also be used for this service.
@@ -20,7 +20,7 @@ Requirements:
 
 ```bash
 $ git clone <gitrepouri>
-$ cd piveau-consus-importing-oaipmh
+$ cd piveau-consus-importing-oaipmh-nfdi4cat
 $ mvn package
 ```
 
@@ -35,13 +35,13 @@ $ java -jar target/importing-oaipmh.jar
 Build docker image:
 
 ```bash
-$ docker build -t piveau/piveau-importing-oaipmh .
+$ docker build -t piveau/piveau-importing-oaipmh-nfdi4cat .
 ```
 
 Run docker image:
 
 ```bash
-$ docker run -it -p 8080:8080 piveau/piveau-importing-oaipmh
+$ docker run -it -p 8080:8080 piveau/piveau-importing-oaipmh-nfdi4cat
 ```
 ## Configuration
 

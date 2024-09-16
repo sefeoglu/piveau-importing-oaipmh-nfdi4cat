@@ -30,6 +30,8 @@ import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 import org.jdom2.xpath.XPathExpression;
 import org.jdom2.xpath.XPathFactory;
+import org.json.XML;
+import org.json.JSONObject;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -88,7 +90,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
     private void fetch(String resumptionToken, PipeContext pipeContext, List<String> identifiers) {
 
         JsonObject config = pipeContext.getConfig();
-
+        pipeContext.log().warn("Identifiers: {}", identifiers);
         String tmp = config.getString("address", defaultOaiPmhAdapterUri);
         if (config.containsKey("resource")) {
             tmp += "/" + config.getString("resource");
@@ -117,7 +119,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
         if (resumptionToken != null) {
             request.addQueryParam("resumptionToken", resumptionToken);
         }
-
+        
         breaker.<HttpResponse<Buffer>>execute(promise -> request.send()
                         .onSuccess(response -> {
                             if (response.statusCode() == 200) {
@@ -147,6 +149,7 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
 
                             OAIPMHResult result = oaipmhResponse.getResult();
                             List<Document> records = result.getRecords();
+                            pipeContext.log().warn("Data content: {}", records);
                             records.forEach(doc -> {
 
                                 if (pipeContext.log().isDebugEnabled()) {
@@ -157,51 +160,41 @@ public class ImportingOaipmhVerticle extends AbstractVerticle {
                                 Element dataset = metadataExpression.evaluateFirst(doc);
                                 if (dataset != null && identifier != null) {
                                     String output = new XMLOutputter(Format.getPrettyFormat()).outputString(dataset);
-
+                                
+                                    JSONObject jsonObj = XML.toJSONObject(output);
+                                    pipeContext.log().warn("Data:{}", jsonObj);
+                                    jsonObj.getJSONObject("oai_dc:dc").put("id", identifier.getValue());
+                                    
                                     if (identifiers.contains(identifier.getTextTrim())) {
                                         pipeContext.log().warn("Identifier duplication: {}", identifier.getTextTrim());
                                     }
-
+                                    
                                     identifiers.add(identifier.getTextTrim());
+                                    pipeContext.log().warn("complete Size:{}", records.size());
                                     ObjectNode dataInfo = new ObjectMapper().createObjectNode()
-                                            .put("total", result.completeSize() != -1 ? result.completeSize() : records.size())
+                                            .put("total", records.size())
                                             .put("counter", identifiers.size())
                                             .put("identifier", identifier.getTextTrim())
                                             .put("catalogue", config.getString("catalogue"));
 
-                                    String format = "application/rdf+xml";
-                                    if (dcatFormats.contains(metadata) && config.getBoolean("preProcessing", false)) {
-                                        try {
-                                            Pair<ByteArrayOutputStream, String> parsed = PreProcessing.preProcess(output.getBytes(), "application/rdf+xml", address);
-                                            byte[] outputBytes = parsed.getFirst().toByteArray();
-                                            Model m = JenaUtils.read(outputBytes, parsed.getSecond(), address);
-                                            parsed.getFirst().close();
-                                            output = JenaUtils.write(m, outputFormat);
-                                            format = outputFormat;
-                                        } catch (Exception e) {
-                                            pipeContext.log().error("Normalize model ({})", identifier, e);
-                                        }
-                                    }
-                                    pipeContext.setResult(output, format, dataInfo).forward();
+                                    String format = "application/rdf+json";
+                                    pipeContext.setResult(jsonObj.toString(), format, dataInfo).forward();
                                     pipeContext.log().info("Data imported: {}", dataInfo.toString());
                                     pipeContext.log().debug("Data content: {}", output);
                                 } else {
                                     pipeContext.log().error("No dataset or identifier");
                                 }
                             });
-                            if (result.token() != null && !result.token().isEmpty()) {
-                                fetch(result.token(), pipeContext, identifiers);
-                            } else {
-                                int delay = pipeContext.getConfig().getInteger("sendListDelay", defaultDelay);
-                                vertx.setTimer(delay, t -> {
-                                    ObjectNode info = new ObjectMapper().createObjectNode()
-                                            .put("content", "identifierList")
-                                            .put("catalogue", config.getString("catalogue"));
-                                    pipeContext.setResult(new JsonArray(identifiers).encodePrettily(), "application/json", info).forward();
-                                    pipeContext.log().info("Import metadata finished");
-                                    pipeContext.setRunFinished();
-                                });
-                            }
+
+                            pipeContext.log().info("Import metadata finished");
+                            int delay = pipeContext.getConfig().getInteger("sendListDelay", defaultDelay);
+                            vertx.setTimer(delay, t -> {
+                                ObjectNode info = new ObjectMapper().createObjectNode()
+                                        .put("content", "identifierList")
+                                        .put("catalogue", config.getString("catalogue"));
+                                pipeContext.setResult(new JsonArray(identifiers).encodePrettily(), "application/json", info).forward();
+                            });
+                            
                         } else {
                             pipeContext.setFailure(oaipmhResponse.getError().getMessage());
                         }
